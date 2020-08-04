@@ -3,7 +3,6 @@ package org.jdepoix.testrelationfinder.relation;
 import com.github.javaparser.ast.body.MethodDeclaration;
 import com.github.javaparser.ast.expr.MethodCallExpr;
 
-import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Optional;
@@ -27,17 +26,29 @@ public class Finder {
     }
 
     private TestRelation findTestRelation(MethodDeclaration testMethod) {
-        return Optional.ofNullable(
-            this
-                .findHighestRankingMethod(testMethod, () -> testMethod.getNameAsString())
-                .orElseGet(
-                    () -> this
-                        .findHighestRankingMethod(testMethod, () -> testMethod.resolve().getClassName())
-                        .orElse(null)
-                )
-        )
-        .map(rankingResult -> TestRelation.resolveFromNodes(testMethod, Optional.of(rankingResult.getEntity())))
-        .orElseGet(() -> TestRelation.resolveFromNodes(testMethod, Optional.empty()));
+        return this
+            .findHighestRankingMethod(testMethod, () -> testMethod.getNameAsString())
+            .map(
+                rankingResult ->
+                    TestRelation.resolveFromNodes(
+                        testMethod,
+                        rankingResult.getEntity(),
+                        TestRelation.Type.MAPPED_BY_TEST_METHOD_NAME
+                    )
+            )
+            .orElseGet(
+                () -> this
+                    .findHighestRankingMethod(testMethod, () -> testMethod.resolve().getClassName())
+                    .map(
+                        rankingResult ->
+                            TestRelation.resolveFromNodes(
+                                testMethod,
+                                rankingResult.getEntity(),
+                                TestRelation.Type.MAPPED_BY_TEST_CLASS_NAME
+                            )
+                    )
+                    .orElseGet(() -> TestRelation.resolveFromNodes(testMethod))
+            );
     }
 
     private Optional<RankingResult<MethodCallExpr>> findHighestRankingMethod(

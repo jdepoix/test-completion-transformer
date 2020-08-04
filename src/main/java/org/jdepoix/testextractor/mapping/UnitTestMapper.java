@@ -130,7 +130,10 @@ public class UnitTestMapper {
                     .filter(rankingResult -> rankingResult.getScore() > 0.05)
                     .sorted(Comparator.reverseOrder())
                     .findFirst();
-                identifiedByClassCounter++;
+
+                if (highestRankedMethod.isPresent()) {
+                    identifiedByClassCounter++;
+                }
 //
 //                try {
 //                    System.out.printf("%s.%s tests %s\n", testMethod.resolve().getClassName(), testMethod.getNameAsString(), highestRankedMethod.get().getEntity().resolve().getQualifiedName());

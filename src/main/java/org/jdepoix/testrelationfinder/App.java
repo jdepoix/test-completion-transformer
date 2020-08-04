@@ -26,5 +26,38 @@ public class App {
         Instant end = Instant.now();
         System.out.println("END: " + start);
         System.out.println("DURATION: " + Duration.between(start, end));
+
+        int notFoundCounter = 0;
+        int foundCounter = 0;
+        int resolvedCounter = 0;
+        int cantResolveCounter = 0;
+        int identifiedByClassCounter = 0;
+        int identifiedByMethodCounter = 0;
+
+        for (TestRelation testRelation : testRelations) {
+            foundCounter++;
+
+            if (testRelation.getType() == TestRelation.Type.MAPPED_BY_TEST_CLASS_NAME) {
+                identifiedByClassCounter++;
+            }
+            else if (testRelation.getType() == TestRelation.Type.MAPPED_BY_TEST_METHOD_NAME) {
+                identifiedByMethodCounter++;
+            } else {
+                notFoundCounter++;
+            }
+
+            if (testRelation.getResolutionStatus() == TestRelation.ResolutionStatus.UNRESOLVABLE) {
+                cantResolveCounter++;
+            } else if (testRelation.getResolutionStatus() == TestRelation.ResolutionStatus.RESOLVED) {
+                resolvedCounter++;
+            }
+        }
+
+        System.out.println("notFoundCounter: " + notFoundCounter);
+        System.out.println("foundCounter: " + foundCounter);
+        System.out.println("resolvedCounter: " + resolvedCounter);
+        System.out.println("cantResolveCounter: " + cantResolveCounter);
+        System.out.println("identifiedByClassCounter: " + identifiedByClassCounter);
+        System.out.println("identifiedByMethodCounter: " + identifiedByMethodCounter);
     }
 }
