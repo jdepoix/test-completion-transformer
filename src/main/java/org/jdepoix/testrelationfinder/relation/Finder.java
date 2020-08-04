@@ -4,10 +4,8 @@ import com.github.javaparser.ast.body.MethodDeclaration;
 import com.github.javaparser.ast.expr.MethodCallExpr;
 
 import java.util.Comparator;
-import java.util.List;
 import java.util.Optional;
 import java.util.function.Supplier;
-import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 public class Finder {
@@ -19,10 +17,8 @@ public class Finder {
         this.tokenizer = new TestEntityNameTokenizer();
     }
 
-    public List<TestRelation> findTestRelations(Stream<MethodDeclaration> testMethods) {
-        return testMethods
-            .map(this::findTestRelation)
-            .collect(Collectors.toList());
+    public Stream<TestRelation> findTestRelations(Stream<MethodDeclaration> testMethods) {
+        return testMethods.map(this::findTestRelation);
     }
 
     private TestRelation findTestRelation(MethodDeclaration testMethod) {
