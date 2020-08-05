@@ -26,7 +26,7 @@ public class Finder {
             .findHighestRankingMethod(testMethod, () -> testMethod.getNameAsString())
             .map(
                 rankingResult ->
-                    TestRelation.resolveFromNodes(
+                    new TestRelation(
                         testMethod,
                         rankingResult.getEntity(),
                         TestRelation.Type.MAPPED_BY_TEST_METHOD_NAME
@@ -37,13 +37,13 @@ public class Finder {
                     .findHighestRankingMethod(testMethod, () -> testMethod.resolve().getClassName())
                     .map(
                         rankingResult ->
-                            TestRelation.resolveFromNodes(
+                            new TestRelation(
                                 testMethod,
                                 rankingResult.getEntity(),
                                 TestRelation.Type.MAPPED_BY_TEST_CLASS_NAME
                             )
                     )
-                    .orElseGet(() -> TestRelation.resolveFromNodes(testMethod))
+                    .orElseGet(() -> new TestRelation(testMethod))
             );
     }
 
