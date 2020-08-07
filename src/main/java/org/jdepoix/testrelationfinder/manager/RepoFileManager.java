@@ -1,0 +1,34 @@
+package org.jdepoix.testrelationfinder.manager;
+
+import org.jdepoix.testrelationfinder.relation.ResolvedTestRelation;
+
+import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
+
+public class RepoFileManager {
+    private final Path basePath;
+
+    public RepoFileManager(Path basePath) {
+        this.basePath = basePath;
+    }
+
+    public void saveFiles(String repoName, Path repoBasePath, ResolvedTestRelation testRelation) {
+        testRelation.getRelatedMethodPath().ifPresent(relatedMethodPath -> {
+            try {
+                this.copyFile(repoName, repoBasePath, testRelation.getTestPath());
+                this.copyFile(repoName, repoBasePath, relatedMethodPath);
+            } catch (IOException e) {
+                throw new RuntimeException(e);
+            }
+        });
+    }
+
+    private void copyFile(String repoName, Path repoBasePath, Path filePath) throws IOException {
+        final Path fileCopyPath = this.basePath.resolve(repoName).resolve(filePath);
+        if (!Files.exists(fileCopyPath)) {
+            Files.createDirectories(fileCopyPath.getParent());
+            Files.copy(repoBasePath.resolve(filePath), fileCopyPath);
+        }
+    }
+}

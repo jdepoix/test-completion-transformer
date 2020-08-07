@@ -9,7 +9,6 @@ import java.io.IOException;
 import java.nio.file.Path;
 import java.nio.file.Files;
 import java.util.Comparator;
-import java.util.function.Consumer;
 import java.util.stream.Stream;
 
 public class ArchiveHandler {
@@ -19,13 +18,7 @@ public class ArchiveHandler {
         this.tempUnpackDirectoryRoot = tempUnpackDirectoryRoot;
     }
 
-    public void runOnArchiveContent(Path archivePath, Consumer<Path> runner) throws IOException {
-        Path tempUnpackedArchivePath = this.unpackArchive(archivePath);
-        runner.accept(tempUnpackedArchivePath);
-        this.deleteTempUnpackedArchive(tempUnpackedArchivePath);
-    }
-
-    private Path unpackArchive(Path archivePath) throws IOException {
+    public Path unpackArchive(Path archivePath) throws IOException {
         File archive = new File(archivePath.toUri());
         Archiver archiver = ArchiverFactory.createArchiver("tar", "gz");
         ArchiveStream stream = archiver.stream(archive);
@@ -35,11 +28,13 @@ public class ArchiveHandler {
         return tempUnpackedArchivePath;
     }
 
-    private void deleteTempUnpackedArchive(Path tempUnpackedArchivePath) throws IOException {
+    public void deleteTempUnpackedArchive(Path tempUnpackedArchivePath) throws IOException {
         try (Stream<Path> walk = Files.walk(tempUnpackedArchivePath)) {
             walk.sorted(Comparator.reverseOrder())
                 .map(Path::toFile)
                 .forEach(File::delete);
         }
     }
+
+
 }
