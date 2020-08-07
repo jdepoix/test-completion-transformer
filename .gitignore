@@ -2,3 +2,4 @@ target
 *.db
 *.iml
 .DS_STORE
+assets
