@@ -16,6 +16,29 @@
                     <release>12</release>
                 </configuration>
             </plugin>
+            <plugin>
+                <artifactId>maven-assembly-plugin</artifactId>
+                <version>3.3.0</version>
+                <configuration>
+                    <descriptorRefs>
+                        <descriptorRef>jar-with-dependencies</descriptorRef>
+                    </descriptorRefs>
+                    <archive>
+                        <manifest>
+                            <mainClass>org.jdepoix.testrelationfinder.App</mainClass>
+                        </manifest>
+                    </archive>
+                </configuration>
+                <executions>
+                    <execution>
+                        <id>make-assembly</id> <!-- this is used for inheritance merges -->
+                        <phase>package</phase> <!-- bind to the packaging phase -->
+                        <goals>
+                            <goal>single</goal>
+                        </goals>
+                    </execution>
+                </executions>
+            </plugin>
         </plugins>
     </build>
     <dependencies>
@@ -35,10 +58,17 @@
             <artifactId>jarchivelib</artifactId>
             <version>1.0.0</version>
         </dependency>
+        <dependency>
+            <groupId>org.xerial</groupId>
+            <artifactId>sqlite-jdbc</artifactId>
+            <version>3.32.3.2</version>
+        </dependency>
     </dependencies>
     <properties>
         <java.version>12</java.version>
         <maven.compiler.source>1.12</maven.compiler.source>
         <maven.compiler.target>1.12</maven.compiler.target>
     </properties>
+
+
 </project>
