@@ -17,12 +17,10 @@ public class ResolvedTestRelation {
     private final String testMethodClassName;
     private final String testMethodName;
     private final Path testPath;
-    private final Optional<String> testFileContent;
     private final Optional<String> relatedMethodPackageName;
     private final Optional<String> relatedMethodClassName;
     private final Optional<String> relatedMethodName;
     private final Optional<Path> relatedMethodPath;
-    private final Optional<String> relatedMethodFileContent;
 
     public ResolvedTestRelation(
         String repoName,
@@ -32,12 +30,10 @@ public class ResolvedTestRelation {
         String testMethodClassName,
         String testMethodName,
         Path testPath,
-        Optional<String> testFileContent,
         Optional<String> relatedMethodPackageName,
         Optional<String> relatedMethodClassName,
         Optional<String> relatedMethodName,
-        Optional<Path> relatedMethodPath,
-        Optional<String> relatedMethodFileContent
+        Optional<Path> relatedMethodPath
     ) {
         this.repoName = repoName;
         this.relationType = relationType;
@@ -46,11 +42,53 @@ public class ResolvedTestRelation {
         this.testMethodClassName = testMethodClassName;
         this.testMethodName = testMethodName;
         this.testPath = testPath;
-        this.testFileContent = testFileContent;
         this.relatedMethodPackageName = relatedMethodPackageName;
         this.relatedMethodClassName = relatedMethodClassName;
         this.relatedMethodName = relatedMethodName;
         this.relatedMethodPath = relatedMethodPath;
-        this.relatedMethodFileContent = relatedMethodFileContent;
+    }
+
+    public String getRepoName() {
+        return repoName;
+    }
+
+    public TestRelation.Type getRelationType() {
+        return relationType;
+    }
+
+    public ResolutionStatus getResolutionStatus() {
+        return resolutionStatus;
+    }
+
+    public String getTestMethodPackageName() {
+        return testMethodPackageName;
+    }
+
+    public String getTestMethodClassName() {
+        return testMethodClassName;
+    }
+
+    public String getTestMethodName() {
+        return testMethodName;
+    }
+
+    public Path getTestPath() {
+        return testPath;
+    }
+
+    public Optional<String> getRelatedMethodPackageName() {
+        return relatedMethodPackageName;
+    }
+
+    public Optional<String> getRelatedMethodClassName() {
+        return relatedMethodClassName;
+    }
+
+    public Optional<String> getRelatedMethodName() {
+        return relatedMethodName;
+    }
+
+    public Optional<Path> getRelatedMethodPath() {
+        return relatedMethodPath;
     }
 }

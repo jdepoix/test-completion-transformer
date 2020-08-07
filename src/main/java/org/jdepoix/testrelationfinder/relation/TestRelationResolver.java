@@ -4,25 +4,18 @@ import com.github.javaparser.ast.body.MethodDeclaration;
 import com.github.javaparser.ast.expr.MethodCallExpr;
 import com.github.javaparser.resolution.declarations.ResolvedMethodDeclaration;
 
-import java.io.IOException;
-import java.nio.file.Files;
 import java.nio.file.Path;
-import java.util.HashMap;
 import java.util.Optional;
 
 public class TestRelationResolver {
-    private final HashMap<Path, String> fileCache = new HashMap<>();
-
     public ResolvedTestRelation resolve(String repoName, Path basePath, TestRelation testRelation) {
         final Optional<MethodCallExpr> relatedMethod = testRelation.getRelatedMethod();
-
         if (relatedMethod.isPresent()) {
             try {
                 final ResolvedMethodDeclaration resolvedRelatedMethod = relatedMethod.get().resolve();
                 return build(
                     repoName,
                     basePath,
-
                     testRelation.getType(),
                     ResolvedTestRelation.ResolutionStatus.RESOLVED,
                     testRelation.getTestMethod(),
@@ -88,13 +81,6 @@ public class TestRelationResolver {
         String testMethodPackageName = resolvedTestMethod.getPackageName();
         String testMethodClassName = resolvedTestMethod.getClassName();
         String testMethodName = resolvedTestMethod.getName();
-        Path testPath = testMethod.findCompilationUnit().get().getStorage().get().getPath();
-        String testFileContent = null;
-        String relatedMethodFileContent = null;
-        if (relatedMethodPath.isPresent()) {
-            testFileContent = this.getFileContent(testPath);
-            relatedMethodFileContent = this.getFileContent(relatedMethodPath.get());
-        }
         return new ResolvedTestRelation(
             repoName,
             type,
@@ -102,13 +88,14 @@ public class TestRelationResolver {
             testMethodPackageName,
             testMethodClassName,
             testMethodName,
-            this.resolveRelativeFilePath(basePath, Optional.of(testPath)).get(),
-            Optional.ofNullable(testFileContent),
+            this.resolveRelativeFilePath(
+                basePath,
+                Optional.of(testMethod.findCompilationUnit().get().getStorage().get().getPath())
+            ).get(),
             relatedMethodPackageName,
             relatedMethodClassName,
             relatedMethodName,
-            this.resolveRelativeFilePath(basePath, relatedMethodPath),
-            Optional.ofNullable(relatedMethodFileContent)
+            this.resolveRelativeFilePath(basePath, relatedMethodPath)
         );
     }
 
@@ -117,18 +104,5 @@ public class TestRelationResolver {
             return Optional.empty();
         }
         return Optional.of(basePath.toAbsolutePath().relativize(filePath.get().toAbsolutePath()));
-    }
-
-    private String getFileContent(Path filePath) {
-        String cacheEntry = this.fileCache.get(filePath);
-        if (cacheEntry == null) {
-            try {
-                cacheEntry = Files.readString(filePath);
-            } catch (IOException e) {
-                cacheEntry = null;
-            }
-            this.fileCache.put(filePath, cacheEntry);
-        }
-        return cacheEntry;
     }
 }
