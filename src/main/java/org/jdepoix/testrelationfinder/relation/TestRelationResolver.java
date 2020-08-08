@@ -39,7 +39,7 @@ public class TestRelationResolver {
             return build(
                 repoName,
                 basePath,
-                TestRelation.Type.NO_RELATION_FOUND,
+                testRelation.getType(),
                 ResolvedTestRelation.ResolutionStatus.NOT_RESOLVED,
                 testRelation.getTestMethod()
             );

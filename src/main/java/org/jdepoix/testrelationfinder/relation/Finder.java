@@ -4,8 +4,8 @@ import com.github.javaparser.ast.body.MethodDeclaration;
 import com.github.javaparser.ast.expr.MethodCallExpr;
 
 import java.util.Comparator;
-import java.util.Optional;
-import java.util.function.Supplier;
+import java.util.List;
+import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 public class Finder {
@@ -22,50 +22,55 @@ public class Finder {
     }
 
     private TestRelation findTestRelation(MethodDeclaration testMethod) {
-        return this
-            .findHighestRankingMethod(testMethod, () -> testMethod.getNameAsString())
-            .map(
-                rankingResult ->
-                    new TestRelation(
-                        testMethod,
-                        rankingResult.getEntity(),
-                        TestRelation.Type.MAPPED_BY_TEST_METHOD_NAME
-                    )
-            )
-            .orElseGet(
-                () -> this
-                    .findHighestRankingMethod(testMethod, () -> testMethod.resolve().getClassName())
-                    .map(
-                        rankingResult ->
-                            new TestRelation(
-                                testMethod,
-                                rankingResult.getEntity(),
-                                TestRelation.Type.MAPPED_BY_TEST_CLASS_NAME
-                            )
-                    )
-                    .orElseGet(() -> new TestRelation(testMethod))
-            );
+        final TestRelation.Builder testRelationBuilder = new TestRelation.Builder().setTestMethod(testMethod);
+        final List<MethodCallExpr> methodCalls = testMethod.findAll(MethodCallExpr.class);
+
+        this.findHighestRankingMethods(testRelationBuilder, methodCalls, testMethod.getNameAsString());
+        if (testRelationBuilder.getType().isEmpty()) {
+            return testRelationBuilder.setType(TestRelation.Type.MAPPED_BY_TEST_METHOD_NAME).build();
+        }
+
+        this.findHighestRankingMethods(testRelationBuilder, methodCalls, testMethod.resolve().getClassName());
+        if (testRelationBuilder.getType().isEmpty()) {
+            testRelationBuilder.setType(TestRelation.Type.MAPPED_BY_TEST_CLASS_NAME);
+        }
+        return testRelationBuilder.build();
     }
 
-    private Optional<RankingResult<MethodCallExpr>> findHighestRankingMethod(
-        MethodDeclaration testMethod,
-        Supplier<String> testEntityNameSupplier
+    private void findHighestRankingMethods(
+        TestRelation.Builder testRelationBuilder,
+        List<MethodCallExpr> methodCalls,
+        String testEntityName
     ) {
-        return testMethod
-            .findAll(MethodCallExpr.class)
+        final List<RankingResult<MethodCallExpr>> methodRanking = methodCalls
             .stream()
             .map(
                 methodCallExpr ->
                     new RankingResult<>(
                         methodCallExpr,
                         this.similarityRanker.rank(
-                            this.tokenizer.tokenize(testEntityNameSupplier.get()),
+                            this.tokenizer.tokenize(testEntityName),
                             this.tokenizer.tokenize(methodCallExpr.getNameAsString())
                         )
                     )
             )
             .filter(rankingResult -> rankingResult.getScore() > 0.05)
             .sorted(Comparator.reverseOrder())
-            .findFirst();
+            .collect(Collectors.toList());
+
+        TestRelation.Type newType = null;
+        if (methodRanking.isEmpty()) {
+            if (testRelationBuilder.getType().orElse(null) == TestRelation.Type.AMBIGUOUS_RELATIONS) {
+                newType = TestRelation.Type.AMBIGUOUS_RELATIONS;
+            } else {
+                newType = TestRelation.Type.NO_RELATION_FOUND;
+            }
+        } else if (methodRanking.size() >= 2 && methodRanking.get(0).getScore() == methodRanking.get(1).getScore()) {
+            newType = TestRelation.Type.AMBIGUOUS_RELATIONS;
+        }
+        if (newType == null) {
+            testRelationBuilder.setRelatedMethod(methodRanking.get(0).getEntity());
+        }
+        testRelationBuilder.setType(newType);
     }
 }
