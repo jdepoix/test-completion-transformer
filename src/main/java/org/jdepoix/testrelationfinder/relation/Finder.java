@@ -4,7 +4,9 @@ import com.github.javaparser.ast.body.MethodDeclaration;
 import com.github.javaparser.ast.expr.MethodCallExpr;
 
 import java.util.Comparator;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -22,8 +24,8 @@ public class Finder {
     }
 
     private TestRelation findTestRelation(MethodDeclaration testMethod) {
+        final List<MethodCallExpr> methodCalls = this.getDistinctMethodCalls(testMethod.findAll(MethodCallExpr.class));
         final TestRelation.Builder testRelationBuilder = new TestRelation.Builder().setTestMethod(testMethod);
-        final List<MethodCallExpr> methodCalls = testMethod.findAll(MethodCallExpr.class);
 
         this.findHighestRankingMethods(testRelationBuilder, methodCalls, testMethod.getNameAsString());
         if (testRelationBuilder.getType().isEmpty()) {
@@ -35,6 +37,14 @@ public class Finder {
             testRelationBuilder.setType(TestRelation.Type.MAPPED_BY_TEST_CLASS_NAME);
         }
         return testRelationBuilder.build();
+    }
+
+    private List<MethodCallExpr> getDistinctMethodCalls(List<MethodCallExpr> methodCalls) {
+        final Set<String> uniqueMethodNames = new HashSet<>();
+        return methodCalls
+            .stream()
+            .filter(methodCallExpr -> uniqueMethodNames.add(methodCallExpr.getNameAsString()))
+            .collect(Collectors.toList());
     }
 
     private void findHighestRankingMethods(
