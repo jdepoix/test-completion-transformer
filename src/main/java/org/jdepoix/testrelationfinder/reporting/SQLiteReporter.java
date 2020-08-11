@@ -11,7 +11,7 @@ import java.util.List;
 
 public class SQLiteReporter {
     private static final String INSERT_TEST_RELATION_SQL =
-        "INSERT INTO test_relations VALUES (null, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);";
+        "INSERT INTO test_relations VALUES (null, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);";
     private static final int BATCH_SIZE = 1000;
 
     private final Path dbFile;
@@ -59,16 +59,21 @@ public class SQLiteReporter {
         ResolvedTestRelation testRelation
     ) throws SQLException {
         preparedStatement.setString(1, repoName);
-        preparedStatement.setString(2, testRelation.getTestMethodPackageName());
-        preparedStatement.setString(3, testRelation.getTestMethodClassName());
-        preparedStatement.setString(4, testRelation.getTestMethodName());
-        preparedStatement.setString(5, testRelation.getTestPath().toString());
-        preparedStatement.setString(6, testRelation.getRelatedMethodPackageName().orElse(null));
-        preparedStatement.setString(7, testRelation.getRelatedMethodClassName().orElse(null));
-        preparedStatement.setString(8, testRelation.getRelatedMethodName().orElse(null));
-        preparedStatement.setString(9, testRelation.getRelatedMethodPath().map(Path::toString).orElse(null));
-        preparedStatement.setString(10, testRelation.getResolutionStatus().toString());
-        preparedStatement.setString(11, testRelation.getRelationType().toString());
+        preparedStatement.setString(2, testRelation.getRelationType().toString());
+        preparedStatement.setString(3, testRelation.getResolutionStatus().toString());
+        preparedStatement.setString(4, testRelation.getGwtResolutionStatus().toString());
+        preparedStatement.setString(5, testRelation.getTestMethodPackageName());
+        preparedStatement.setString(6, testRelation.getTestMethodClassName());
+        preparedStatement.setString(7, testRelation.getTestMethodName());
+        preparedStatement.setString(8, testRelation.getTestPath().toString());
+        preparedStatement.setString(9, testRelation.getRelatedMethodPackageName().orElse(null));
+        preparedStatement.setString(10, testRelation.getRelatedMethodClassName().orElse(null));
+        preparedStatement.setString(11, testRelation.getRelatedMethodName().orElse(null));
+        preparedStatement.setString(12, testRelation.getRelatedMethodPath().map(Path::toString).orElse(null));
+        preparedStatement.setString(13, testRelation.getGiven().orElse(null));
+        preparedStatement.setString(14, testRelation.getWhen().orElse(null));
+        preparedStatement.setString(15, testRelation.getThen().orElse(null));
+
         preparedStatement.addBatch();
     }
 }

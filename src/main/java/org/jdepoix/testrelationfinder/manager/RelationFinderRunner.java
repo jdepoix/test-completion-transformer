@@ -2,6 +2,7 @@ package org.jdepoix.testrelationfinder.manager;
 
 import org.jdepoix.testrelationfinder.archive.ArchiveHandler;
 import org.jdepoix.testrelationfinder.relation.Finder;
+import org.jdepoix.testrelationfinder.relation.GivenWhenThenResolver;
 import org.jdepoix.testrelationfinder.relation.ResolvedTestRelation;
 import org.jdepoix.testrelationfinder.relation.TestRelationResolver;
 import org.jdepoix.testrelationfinder.reporting.SQLiteReporter;
@@ -19,6 +20,8 @@ public class RelationFinderRunner {
     private final Extractor testExtractor;
     private final Finder relationFinder;
     private final ArchiveHandler archiveHandler;
+    private final GivenWhenThenResolver givenWhenThenResolver;
+    private final TestRelationResolver testRelationResolver;
     private final RepoFileManager fileManager;
     private final SQLiteReporter reporter;
 
@@ -26,12 +29,16 @@ public class RelationFinderRunner {
         Extractor testExtractor,
         Finder relationFinder,
         ArchiveHandler archiveHandler,
+        GivenWhenThenResolver givenWhenThenResolver,
+        TestRelationResolver testRelationResolver,
         RepoFileManager fileManager,
         SQLiteReporter reporter
     ) {
         this.testExtractor = testExtractor;
         this.relationFinder = relationFinder;
         this.archiveHandler = archiveHandler;
+        this.givenWhenThenResolver = givenWhenThenResolver;
+        this.testRelationResolver = testRelationResolver;
         this.fileManager = fileManager;
         this.reporter = reporter;
     }
@@ -53,10 +60,10 @@ public class RelationFinderRunner {
 
     private void runRelationDetection(String repoName, Path path) throws SQLException {
         System.out.println("start " + repoName);
-        final TestRelationResolver testRelationResolver = new TestRelationResolver();
         final List<ResolvedTestRelation> resolvedTestRelations = this.relationFinder
             .findTestRelations(this.testExtractor.extractTestMethods(path))
-            .map(testRelation -> testRelationResolver.resolve(repoName, path, testRelation))
+            .map(testRelation -> this.givenWhenThenResolver.resolve(testRelation))
+            .map(testRelation -> this.testRelationResolver.resolve(repoName, path, testRelation))
             .peek(testRelation -> this.fileManager.saveFiles(repoName, path, testRelation))
             .collect(Collectors.toList());
 

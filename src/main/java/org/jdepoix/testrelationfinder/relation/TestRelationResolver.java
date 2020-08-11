@@ -8,7 +8,8 @@ import java.nio.file.Path;
 import java.util.Optional;
 
 public class TestRelationResolver {
-    public ResolvedTestRelation resolve(String repoName, Path basePath, TestRelation testRelation) {
+    public ResolvedTestRelation resolve(String repoName, Path basePath, GivenWhenThenRelation gwtRelation) {
+        final TestRelation testRelation = gwtRelation.getTestRelation();
         final Optional<MethodCallExpr> relatedMethod = testRelation.getRelatedMethod();
         if (relatedMethod.isPresent()) {
             try {
@@ -18,13 +19,17 @@ public class TestRelationResolver {
                     basePath,
                     testRelation.getType(),
                     ResolvedTestRelation.ResolutionStatus.RESOLVED,
+                    gwtRelation.getResolutionStatus(),
                     testRelation.getTestMethod(),
                     Optional.of(resolvedRelatedMethod.getPackageName()),
                     Optional.of(resolvedRelatedMethod.getClassName()),
                     Optional.of(resolvedRelatedMethod.getName()),
                     Optional.of(
                         resolvedRelatedMethod.toAst().get().findCompilationUnit().get().getStorage().get().getPath()
-                    )
+                    ),
+                    gwtRelation.getGiven(),
+                    gwtRelation.getWhen(),
+                    gwtRelation.getThen()
                 );
             } catch (Exception e) {
                 return build(
@@ -32,6 +37,7 @@ public class TestRelationResolver {
                     basePath,
                     testRelation.getType(),
                     ResolvedTestRelation.ResolutionStatus.UNRESOLVABLE,
+                    gwtRelation.getResolutionStatus(),
                     testRelation.getTestMethod()
                 );
             }
@@ -41,6 +47,7 @@ public class TestRelationResolver {
                 basePath,
                 testRelation.getType(),
                 ResolvedTestRelation.ResolutionStatus.NOT_RESOLVED,
+                gwtRelation.getResolutionStatus(),
                 testRelation.getTestMethod()
             );
         }
@@ -51,6 +58,7 @@ public class TestRelationResolver {
         Path basePath,
         TestRelation.Type type,
         ResolvedTestRelation.ResolutionStatus resolutionStatus,
+        GivenWhenThenRelation.ResolutionStatus gwtResolutionStatus,
         MethodDeclaration testMethod
     ) {
         return build(
@@ -58,7 +66,11 @@ public class TestRelationResolver {
             basePath,
             type,
             resolutionStatus,
+            gwtResolutionStatus,
             testMethod,
+            Optional.empty(),
+            Optional.empty(),
+            Optional.empty(),
             Optional.empty(),
             Optional.empty(),
             Optional.empty(),
@@ -71,11 +83,15 @@ public class TestRelationResolver {
         Path basePath,
         TestRelation.Type type,
         ResolvedTestRelation.ResolutionStatus resolutionStatus,
+        GivenWhenThenRelation.ResolutionStatus gwtResolutionStatus,
         MethodDeclaration testMethod,
         Optional<String> relatedMethodPackageName,
         Optional<String> relatedMethodClassName,
         Optional<String> relatedMethodName,
-        Optional<Path> relatedMethodPath
+        Optional<Path> relatedMethodPath,
+        Optional<String> given,
+        Optional<String> when,
+        Optional<String> then
     ) {
         ResolvedMethodDeclaration resolvedTestMethod = testMethod.resolve();
         String testMethodPackageName = resolvedTestMethod.getPackageName();
@@ -85,6 +101,7 @@ public class TestRelationResolver {
             repoName,
             type,
             resolutionStatus,
+            gwtResolutionStatus,
             testMethodPackageName,
             testMethodClassName,
             testMethodName,
@@ -95,7 +112,10 @@ public class TestRelationResolver {
             relatedMethodPackageName,
             relatedMethodClassName,
             relatedMethodName,
-            this.resolveRelativeFilePath(basePath, relatedMethodPath)
+            this.resolveRelativeFilePath(basePath, relatedMethodPath),
+            given,
+            when,
+            then
         );
     }
 

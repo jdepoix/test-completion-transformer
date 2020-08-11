@@ -31,4 +31,24 @@ public class GivenWhenThenRelation {
         this.when = Optional.empty();
         this.then = Optional.empty();
     }
+
+    public TestRelation getTestRelation() {
+        return testRelation;
+    }
+
+    public ResolutionStatus getResolutionStatus() {
+        return resolutionStatus;
+    }
+
+    public Optional<String> getGiven() {
+        return given;
+    }
+
+    public Optional<String> getWhen() {
+        return when;
+    }
+
+    public Optional<String> getThen() {
+        return then;
+    }
 }

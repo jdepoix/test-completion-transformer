@@ -138,37 +138,47 @@ public class App {
 //        }
 
 //        files.forEach(path -> {
-//            Path workingDir = Path.of("../temp");
-//
-//            try {
-//                ArchiveHandler archiveHandler = new ArchiveHandler(workingDir.resolve("temp"));
-//                Extractor extractor = new Extractor();
-//                Finder finder = new Finder();
-//                RepoFileManager fileManager = new RepoFileManager(workingDir.resolve("repos"));
-//                SQLiteReporter reporter = new SQLiteReporter(workingDir.resolve("test_relations_index.sqlite"));
-//                RelationFinderRunner relationFinderRunner = new RelationFinderRunner(extractor, finder, archiveHandler, fileManager, reporter);
-//                final Instant runStart = Instant.now();
-//                relationFinderRunner.run(Path.of("assets/tars/ReactiveX#RxJava.tar.gz"));
-////                relationFinderRunner.run(Path.of(args[0]));
-//                System.out.println("ended run: " + Duration.between(runStart, Instant.now()));
-//            } catch (IOException e) {
-//                e.printStackTrace();
-//            } catch (IllegalStateException e) {
-//                e.printStackTrace();
-//            } catch (SQLException exception) {
-//                exception.printStackTrace();
-//            }
+            Path workingDir = Path.of("../temp");
+
+            try {
+                ArchiveHandler archiveHandler = new ArchiveHandler(workingDir.resolve("temp"));
+                Extractor extractor = new Extractor();
+                Finder finder = new Finder();
+                final TestRelationResolver testRelationResolver = new TestRelationResolver();
+                final GivenWhenThenResolver givenWhenThenResolver = new GivenWhenThenResolver();
+                RepoFileManager fileManager = new RepoFileManager(workingDir.resolve("repos"));
+                SQLiteReporter reporter = new SQLiteReporter(workingDir.resolve("test_relations_index.sqlite"));
+                RelationFinderRunner relationFinderRunner = new RelationFinderRunner(
+                    extractor,
+                    finder,
+                    archiveHandler,
+                    givenWhenThenResolver,
+                    testRelationResolver,
+                    fileManager,
+                    reporter
+                );
+                final Instant runStart = Instant.now();
+                relationFinderRunner.run(Path.of("assets/tars/ReactiveX#RxJava.tar.gz"));
+//                relationFinderRunner.run(Path.of(args[0]));
+                System.out.println("ended run: " + Duration.between(runStart, Instant.now()));
+            } catch (IOException e) {
+                e.printStackTrace();
+            } catch (IllegalStateException e) {
+                e.printStackTrace();
+            } catch (SQLException exception) {
+                exception.printStackTrace();
+            }
 //        });
 
 
 
-
-        Extractor extractor = new Extractor();
-        Finder finder = new Finder();
-        final Stream<MethodDeclaration> testMethods = extractor.extractTestMethods(Path.of("assets/staticcode/test"));
-        final List<TestRelation> l = finder.findTestRelations(testMethods).collect(Collectors.toList());
-        final GivenWhenThenResolver givenWhenThenResolver = new GivenWhenThenResolver();
-        final GivenWhenThenRelation givenWhenThenRelation = givenWhenThenResolver.resolve(l.get(7));
+//
+//        Extractor extractor = new Extractor();
+//        Finder finder = new Finder();
+//        final Stream<MethodDeclaration> testMethods = extractor.extractTestMethods(Path.of("assets/staticcode/test"));
+//        final List<TestRelation> l = finder.findTestRelations(testMethods).collect(Collectors.toList());
+//        final GivenWhenThenResolver givenWhenThenResolver = new GivenWhenThenResolver();
+//        final GivenWhenThenRelation givenWhenThenRelation = givenWhenThenResolver.resolve(l.get(7));
 
 
         Instant end = Instant.now();

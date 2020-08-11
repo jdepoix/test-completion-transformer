@@ -13,6 +13,7 @@ public class ResolvedTestRelation {
     private final String repoName;
     private final TestRelation.Type relationType;
     private final ResolvedTestRelation.ResolutionStatus resolutionStatus;
+    private final GivenWhenThenRelation.ResolutionStatus gwtResolutionStatus;
     private final String testMethodPackageName;
     private final String testMethodClassName;
     private final String testMethodName;
@@ -21,11 +22,15 @@ public class ResolvedTestRelation {
     private final Optional<String> relatedMethodClassName;
     private final Optional<String> relatedMethodName;
     private final Optional<Path> relatedMethodPath;
+    private final Optional<String> given;
+    private final Optional<String> when;
+    private final Optional<String> then;
 
     public ResolvedTestRelation(
         String repoName,
         TestRelation.Type relationType,
-        ResolutionStatus resolutionStatus,
+        ResolvedTestRelation.ResolutionStatus resolutionStatus,
+        GivenWhenThenRelation.ResolutionStatus gwtResolutionStatus,
         String testMethodPackageName,
         String testMethodClassName,
         String testMethodName,
@@ -33,11 +38,15 @@ public class ResolvedTestRelation {
         Optional<String> relatedMethodPackageName,
         Optional<String> relatedMethodClassName,
         Optional<String> relatedMethodName,
-        Optional<Path> relatedMethodPath
+        Optional<Path> relatedMethodPath,
+        Optional<String> given,
+        Optional<String> when,
+        Optional<String> then
     ) {
         this.repoName = repoName;
         this.relationType = relationType;
         this.resolutionStatus = resolutionStatus;
+        this.gwtResolutionStatus = gwtResolutionStatus;
         this.testMethodPackageName = testMethodPackageName;
         this.testMethodClassName = testMethodClassName;
         this.testMethodName = testMethodName;
@@ -46,6 +55,9 @@ public class ResolvedTestRelation {
         this.relatedMethodClassName = relatedMethodClassName;
         this.relatedMethodName = relatedMethodName;
         this.relatedMethodPath = relatedMethodPath;
+        this.given = given;
+        this.when = when;
+        this.then = then;
     }
 
     public String getRepoName() {
@@ -90,5 +102,21 @@ public class ResolvedTestRelation {
 
     public Optional<Path> getRelatedMethodPath() {
         return relatedMethodPath;
+    }
+
+    public GivenWhenThenRelation.ResolutionStatus getGwtResolutionStatus() {
+        return gwtResolutionStatus;
+    }
+
+    public Optional<String> getGiven() {
+        return given;
+    }
+
+    public Optional<String> getWhen() {
+        return when;
+    }
+
+    public Optional<String> getThen() {
+        return then;
     }
 }
