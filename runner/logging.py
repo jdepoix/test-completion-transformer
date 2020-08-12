@@ -34,4 +34,5 @@ class Manager():
         else:
             self._failed_logger.log(filename)
             _, stderr = task['process'].communicate()
-            self._error_logger.log(f'{filename}:\n{stderr.decode()}\n')
+            stderr = stderr.decode()
+            self._error_logger.log(f'{filename}:\n{stderr if stderr else "TIMEOUT"}\n')

@@ -5,9 +5,10 @@ from collections import deque
 
 
 class ParallelRunner():
-    def __init__(self, jar_path, max_processes):
+    def __init__(self, jar_path, max_processes, timeout_in_seconds):
         self._jar_path = jar_path
         self._max_processes = max_processes
+        self._timeout_in_seconds = timeout_in_seconds
 
     def run(self, arguments, callback):
         upcoming_tasks = deque(arguments)
@@ -15,6 +16,7 @@ class ParallelRunner():
 
         try:
             while len(upcoming_tasks) != 0 or len(running_tasks) != 0:
+                self._kill_timeouted_tasks(running_tasks)
                 self._remove_finished_tasks(running_tasks, callback)
                 self._start_tasks_if_possible(running_tasks, upcoming_tasks)
                 time.sleep(0.1)
@@ -36,7 +38,15 @@ class ParallelRunner():
             ),
             'arguments': arguments,
             'start': datetime.datetime.now(),
+            'end': None,
         }
+
+    def _kill_timeouted_tasks(self, running_tasks):
+        for timeouted_task in (
+            task for task in running_tasks.values()
+            if (datetime.datetime.now() - task['start']).seconds > self._timeout_in_seconds
+        ):
+            self._kill_task(timeouted_task)
 
     def _remove_finished_tasks(self, running_tasks, callback):
         for finished_task_id in [
@@ -50,4 +60,7 @@ class ParallelRunner():
 
     def _kill_all_running_tasks(self, running_tasks):
         for running_task in running_tasks.values():
-            running_task['process'].kill()
+            self._kill_task(running_task)
+
+    def _kill_task(self, task):
+        task['process'].kill()
