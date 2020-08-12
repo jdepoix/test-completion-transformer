@@ -59,16 +59,12 @@ public class RelationFinderRunner {
     }
 
     private void runRelationDetection(String repoName, Path path) throws SQLException {
-        System.out.println("start " + repoName);
         final List<ResolvedTestRelation> resolvedTestRelations = this.relationFinder
             .findTestRelations(this.testExtractor.extractTestMethods(path))
             .map(testRelation -> this.givenWhenThenResolver.resolve(testRelation))
             .map(testRelation -> this.testRelationResolver.resolve(repoName, path, testRelation))
             .peek(testRelation -> this.fileManager.saveFiles(repoName, path, testRelation))
             .collect(Collectors.toList());
-
-        System.out.println(repoName + ": " + resolvedTestRelations.size());
-        System.out.println("finished start reporting: " + Instant.now());
         this.reporter.reportResults(repoName, resolvedTestRelations);
     }
 }
