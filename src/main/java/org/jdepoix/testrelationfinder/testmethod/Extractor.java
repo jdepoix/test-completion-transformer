@@ -1,6 +1,7 @@
 package org.jdepoix.testrelationfinder.testmethod;
 
 import com.github.javaparser.ParseResult;
+import com.github.javaparser.ParserConfiguration;
 import com.github.javaparser.ast.CompilationUnit;
 import com.github.javaparser.ast.body.MethodDeclaration;
 import com.github.javaparser.symbolsolver.JavaSymbolSolver;
@@ -54,7 +55,10 @@ public class Extractor {
         projectRoot
             .getSourceRoots()
             .forEach(sourceRoot -> typeSolver.add(new JavaParserTypeSolver(sourceRoot.getRoot())));
-        collectionStrategy.getParserConfiguration().setSymbolResolver(new JavaSymbolSolver(typeSolver));
+        final ParserConfiguration parserConfiguration = collectionStrategy.getParserConfiguration();
+        parserConfiguration.setSymbolResolver(new JavaSymbolSolver(typeSolver));
+        parserConfiguration.setAttributeComments(false);
+        parserConfiguration.setIgnoreAnnotationsWhenAttributingComments(true);
         return projectRoot.getSourceRoots();
     }
 
