@@ -10,6 +10,7 @@ import com.github.javaparser.ast.stmt.Statement;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -67,7 +68,7 @@ public class GivenWhenThenResolver {
                 }
                 whenCall = methodCall;
             } else if (JUNIT_ASSERTIONS.contains(methodCallName)) {
-                thenCalls.add(this.extractAssertionExpression(methodCall));
+                this.extractAssertionExpression(methodCall).ifPresent(expressionStmt -> thenCalls.add(expressionStmt));
             }
         }
 
@@ -107,10 +108,13 @@ public class GivenWhenThenResolver {
         return Stream.concat(beforeClass.stream(), beforeEach.stream());
     }
 
-    private ExpressionStmt extractAssertionExpression(MethodCallExpr assertionCall) {
+    private Optional<ExpressionStmt> extractAssertionExpression(MethodCallExpr assertionCall) {
         final Node expression = assertionCall.getParentNode().get();
         expression.getParentNode().get().remove(expression);
-        return (ExpressionStmt) expression;
+        if (!(expression instanceof ExpressionStmt)) {
+            return Optional.empty();
+        }
+        return Optional.of((ExpressionStmt) expression);
     }
 
     private String parseASTToMaskedString(Node ast, String relatedMethodCallString) {
