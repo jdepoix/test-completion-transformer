@@ -1,4 +1,5 @@
 import os
+import sys
 
 import jar
 import db
@@ -7,9 +8,9 @@ import run
 
 
 if __name__ == '__main__':
-    REPOS_ROOT_DIR = '../../testrepos/tars'
-    WORKING_DIR = '../../temp'
-    MAX_WORKERS = 4
+    REPOS_ROOT_DIR = sys.argv[1]
+    WORKING_DIR = sys.argv[2]
+    MAX_WORKERS = sys.argv[3]
 
     db.SetupManager(WORKING_DIR).setup()
 
