@@ -31,7 +31,7 @@
           <div class="card">
             <div class="card-body">
               <h5>Given</h5>
-              <pre v-highlight-syntax class="m-0"><code class="java" v-html="highlightRelevantCodePart(testRelation.given_section, '<WHEN>')"></code></pre>
+              <pre v-highlight-syntax class="m-0"><code class="java" v-html="highlightRelevantCodePart(testRelation.given_section, 'WHEN')"></code></pre>
             </div>
             <div class="card-body">
               <h5>When</h5>
@@ -89,13 +89,13 @@ export default {
     _loadFiles() {
       this.getHighlightedFileContent(`${this.testRelation.repo_name}/${this.testRelation.test_file_path}`).then(
         fileContent => {
-          this.testFile = this.highlightRelevantCodePart(fileContent, this.testRelation.test_method);
+          this.testFile = this.highlightRelevantCodePart(fileContent, ` ${this.testRelation.test_method}(`);
         }
       );
       if (this.testRelation.related_file_path) {
         this.getHighlightedFileContent(`${this.testRelation.repo_name}/${this.testRelation.related_file_path}`).then(
           fileContent => {
-            this.relatedFile = this.highlightRelevantCodePart(fileContent, this.testRelation.related_method);
+            this.relatedFile = this.highlightRelevantCodePart(fileContent, ` ${this.testRelation.related_method}(`);
           }
         );
       }

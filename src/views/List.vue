@@ -12,6 +12,7 @@
         <router-link :to="'/test-relation/' + result.id">
           {{ result.repo_name }} - {{ result.test_package }}.{{ result.test_class }}.{{ result.test_method }}
         </router-link>
+        <span v-if="result.resolution_status === 'RESOLVED'" class="badge badge-success float-right">RESOVLED</span>
       </li>
     </ul>
     <nav class="mt-3">
