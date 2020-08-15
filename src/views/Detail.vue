@@ -89,13 +89,13 @@ export default {
     _loadFiles() {
       this.getHighlightedFileContent(`${this.testRelation.repo_name}/${this.testRelation.test_file_path}`).then(
         fileContent => {
-          this.testFile = this.highlightRelevantCodePart(fileContent, ` ${this.testRelation.test_method}(`);
+          this.testFile = this.highlightRelevantCodePart(fileContent, this.testRelation.test_method_signature);
         }
       );
       if (this.testRelation.related_file_path) {
         this.getHighlightedFileContent(`${this.testRelation.repo_name}/${this.testRelation.related_file_path}`).then(
           fileContent => {
-            this.relatedFile = this.highlightRelevantCodePart(fileContent, ` ${this.testRelation.related_method}(`);
+            this.relatedFile = this.highlightRelevantCodePart(fileContent, this.testRelation.related_method_signature);
           }
         );
       }
