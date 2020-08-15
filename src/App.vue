@@ -1,8 +1,21 @@
 <template>
   <div id="app">
-    <router-view/>
+    <div class="container-xl">
+      <router-view/>
+    </div>
   </div>
 </template>
 
+<script>
+import 'bootstrap/dist/css/bootstrap.min.css';
+
+export default {
+
+}
+</script>
+
 <style>
+.font-technical {
+  font-family: "Courier New"
+}
 </style>
