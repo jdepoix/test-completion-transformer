@@ -10,7 +10,7 @@ import run
 if __name__ == '__main__':
     REPOS_ROOT_DIR = sys.argv[1]
     WORKING_DIR = sys.argv[2]
-    MAX_WORKERS = sys.argv[3]
+    MAX_WORKERS = int(sys.argv[3])
 
     db.SetupManager(WORKING_DIR).setup()
 
