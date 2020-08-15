@@ -17,10 +17,12 @@ public class ResolvedTestRelation {
     private final String testMethodPackageName;
     private final String testMethodClassName;
     private final String testMethodName;
+    private final String testMethodSignature;
     private final Path testPath;
     private final Optional<String> relatedMethodPackageName;
     private final Optional<String> relatedMethodClassName;
     private final Optional<String> relatedMethodName;
+    private final Optional<String> relatedMethodSignature;
     private final Optional<Path> relatedMethodPath;
     private final Optional<String> given;
     private final Optional<String> when;
@@ -34,10 +36,12 @@ public class ResolvedTestRelation {
         String testMethodPackageName,
         String testMethodClassName,
         String testMethodName,
+        String testMethodSignature,
         Path testPath,
         Optional<String> relatedMethodPackageName,
         Optional<String> relatedMethodClassName,
         Optional<String> relatedMethodName,
+        Optional<String> relatedMethodSignature,
         Optional<Path> relatedMethodPath,
         Optional<String> given,
         Optional<String> when,
@@ -50,10 +54,12 @@ public class ResolvedTestRelation {
         this.testMethodPackageName = testMethodPackageName;
         this.testMethodClassName = testMethodClassName;
         this.testMethodName = testMethodName;
+        this.testMethodSignature = testMethodSignature;
         this.testPath = testPath;
         this.relatedMethodPackageName = relatedMethodPackageName;
         this.relatedMethodClassName = relatedMethodClassName;
         this.relatedMethodName = relatedMethodName;
+        this.relatedMethodSignature = relatedMethodSignature;
         this.relatedMethodPath = relatedMethodPath;
         this.given = given;
         this.when = when;
@@ -118,5 +124,13 @@ public class ResolvedTestRelation {
 
     public Optional<String> getThen() {
         return then;
+    }
+
+    public String getTestMethodSignature() {
+        return testMethodSignature;
+    }
+
+    public Optional<String> getRelatedMethodSignature() {
+        return relatedMethodSignature;
     }
 }

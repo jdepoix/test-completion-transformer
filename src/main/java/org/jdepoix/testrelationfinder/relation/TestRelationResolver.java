@@ -14,6 +14,7 @@ public class TestRelationResolver {
         if (relatedMethod.isPresent()) {
             try {
                 final ResolvedMethodDeclaration resolvedRelatedMethod = relatedMethod.get().resolve();
+                final MethodDeclaration resolveRelatedMethodAst = resolvedRelatedMethod.toAst().get();
                 return build(
                     repoName,
                     basePath,
@@ -24,9 +25,8 @@ public class TestRelationResolver {
                     Optional.of(resolvedRelatedMethod.getPackageName()),
                     Optional.of(resolvedRelatedMethod.getClassName()),
                     Optional.of(resolvedRelatedMethod.getName()),
-                    Optional.of(
-                        resolvedRelatedMethod.toAst().get().findCompilationUnit().get().getStorage().get().getPath()
-                    ),
+                    Optional.of(resolveRelatedMethodAst.getDeclarationAsString()),
+                    Optional.of(resolveRelatedMethodAst.findCompilationUnit().get().getStorage().get().getPath()),
                     gwtRelation.getGiven(),
                     gwtRelation.getWhen(),
                     gwtRelation.getThen()
@@ -74,6 +74,7 @@ public class TestRelationResolver {
             Optional.empty(),
             Optional.empty(),
             Optional.empty(),
+            Optional.empty(),
             Optional.empty()
         );
     }
@@ -88,23 +89,22 @@ public class TestRelationResolver {
         Optional<String> relatedMethodPackageName,
         Optional<String> relatedMethodClassName,
         Optional<String> relatedMethodName,
+        Optional<String> relatedMethodSignature,
         Optional<Path> relatedMethodPath,
         Optional<String> given,
         Optional<String> when,
         Optional<String> then
     ) {
         ResolvedMethodDeclaration resolvedTestMethod = testMethod.resolve();
-        String testMethodPackageName = resolvedTestMethod.getPackageName();
-        String testMethodClassName = resolvedTestMethod.getClassName();
-        String testMethodName = resolvedTestMethod.getName();
         return new ResolvedTestRelation(
             repoName,
             type,
             resolutionStatus,
             gwtResolutionStatus,
-            testMethodPackageName,
-            testMethodClassName,
-            testMethodName,
+            resolvedTestMethod.getPackageName(),
+            resolvedTestMethod.getClassName(),
+            resolvedTestMethod.getName(),
+            testMethod.getDeclarationAsString(),
             this.resolveRelativeFilePath(
                 basePath,
                 Optional.of(testMethod.findCompilationUnit().get().getStorage().get().getPath())
@@ -112,6 +112,7 @@ public class TestRelationResolver {
             relatedMethodPackageName,
             relatedMethodClassName,
             relatedMethodName,
+            relatedMethodSignature,
             this.resolveRelativeFilePath(basePath, relatedMethodPath),
             given,
             when,
