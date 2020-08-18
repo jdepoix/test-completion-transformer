@@ -7,7 +7,8 @@ public class GivenWhenThenRelation {
         NOT_RESOLVED,
         RESOLVED,
         MULTIPLE_WHENS_FOUND,
-        NO_THEN_FOUND
+        NO_THEN_FOUND,
+        VIOLATES_SAP
     }
 
     private final TestRelation testRelation;

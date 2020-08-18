@@ -7,6 +7,7 @@ import com.github.javaparser.ast.expr.AnnotationExpr;
 import com.github.javaparser.ast.expr.MethodCallExpr;
 import com.github.javaparser.ast.stmt.ExpressionStmt;
 import com.github.javaparser.ast.stmt.Statement;
+import com.github.javaparser.resolution.declarations.ResolvedMethodDeclaration;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -89,6 +90,81 @@ public class GivenWhenThenResolver {
             this.parseStatementList(thenCalls, relatedMethodCallString)
         );
     }
+
+
+    // TODO
+    public GivenWhenThenRelation resolveTEST(TestRelation testRelation) {
+        // TODO ignore if unresolved when input type has been refactored
+        // TODO do not sub with <WHEN>
+        if (testRelation.getRelatedMethod().isEmpty()) {
+            return new GivenWhenThenRelation(testRelation, GivenWhenThenRelation.ResolutionStatus.NOT_RESOLVED);
+        }
+
+        final String relatedMethodName = testRelation.getRelatedMethod().get().getNameAsString();
+        // TODO use resolved tested method were possible when it is an input
+        final ResolvedMethodDeclaration resolvedRelatedMethod = testRelation.getRelatedMethod().get().resolve();
+
+        boolean whenFound = false;
+        // TODO get setup code
+        final List<Statement> given = new ArrayList<>();
+        final List<Statement> then = new ArrayList<>();
+        // TODO get setup code context
+        final List<MethodCallExpr> context = new ArrayList<>();
+
+        for (Statement statement : testRelation.getTestMethod().findAll(Statement.class)) {
+            boolean isAssertionStatement = false;
+            boolean statementContainsWhenCall = false;
+            for (MethodCallExpr methodCall : statement.findAll(MethodCallExpr.class)) {
+                final String methodName = methodCall.getNameAsString();
+                if (methodName.equals(relatedMethodName)) {
+                    ResolvedMethodDeclaration resolvedMethodCall = null;
+                    try {
+                        resolvedMethodCall = methodCall.resolve();
+                    } catch (Exception e) {}
+                    if (resolvedMethodCall == null || !resolvedRelatedMethod.equals(resolvedMethodCall)) {
+                        return new GivenWhenThenRelation(
+                            testRelation,
+                            GivenWhenThenRelation.ResolutionStatus.MULTIPLE_WHENS_FOUND
+                        );
+                    }
+                    statementContainsWhenCall = true;
+                } else if (JUNIT_ASSERTIONS.contains(methodName)) {
+                    isAssertionStatement = true;
+                } else {
+                    context.add(methodCall);
+                }
+            }
+
+            if (statementContainsWhenCall && !then.isEmpty()) {
+                return new GivenWhenThenRelation(
+                    testRelation,
+                    GivenWhenThenRelation.ResolutionStatus.VIOLATES_SAP
+                );
+            }
+
+            if (isAssertionStatement && (whenFound || statementContainsWhenCall)) {
+                then.add(statement);
+            } else {
+                given.add(statement);
+            }
+
+            if (statementContainsWhenCall) {
+                whenFound = true;
+            }
+        }
+
+        if (then.isEmpty()) {
+            return new GivenWhenThenRelation(testRelation, GivenWhenThenRelation.ResolutionStatus.NO_THEN_FOUND);
+        }
+
+        // TODO create final object
+        // TODO resolve context
+        return null;
+    }
+
+
+
+
 
     private Stream<Statement> getSetupCode(MethodDeclaration testMethod) {
         List<Statement> beforeClass = new ArrayList<>();

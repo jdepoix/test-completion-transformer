@@ -19,6 +19,7 @@ class TestEntityNameTokenizer {
         if (name.length() == 0) {
             return new String[]{};
         }
+
         if (MATCH_LOWERCASE.matcher(name).matches() && MATCH_SURROUNDED_UNDERSCORES.matcher(name).matches()) {
             return name.split("_");
         }
