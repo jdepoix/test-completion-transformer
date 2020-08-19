@@ -1,0 +1,31 @@
+package org.jdepoix.testrelationfinder.gwt;
+
+import com.github.javaparser.ast.expr.MethodCallExpr;
+import com.github.javaparser.ast.stmt.Statement;
+
+import java.util.stream.Collectors;
+
+public class GWTContextResolver {
+    public ResolvedGWTTestRelation resolve(GWTTestRelation testRelation) {
+        // TODO make context content unique
+        if (
+            !testRelation.getResolutionStatus().equals(GWTTestRelation.ResolutionStatus.RESOLVED)
+            || testRelation.getContext().get().isEmpty()
+        ) {
+            return new ResolvedGWTTestRelation(testRelation);
+        }
+
+        return new ResolvedGWTTestRelation(
+            testRelation,
+            testRelation.getContext().get().stream().map(this::resolveContext).collect(Collectors.toList())
+        );
+    }
+
+    private GWTContext resolveContext(MethodCallExpr methodCall) {
+        try {
+            return new GWTContext(methodCall, methodCall.resolve());
+        } catch (Exception e) {
+            return new GWTContext(methodCall);
+        }
+    }
+}

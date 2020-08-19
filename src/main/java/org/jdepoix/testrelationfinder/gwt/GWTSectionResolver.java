@@ -1,4 +1,4 @@
-package org.jdepoix.testrelationfinder.relation;
+package org.jdepoix.testrelationfinder.gwt;
 
 import com.github.javaparser.ast.Node;
 import com.github.javaparser.ast.body.ClassOrInterfaceDeclaration;
@@ -8,6 +8,8 @@ import com.github.javaparser.ast.expr.MethodCallExpr;
 import com.github.javaparser.ast.stmt.ExpressionStmt;
 import com.github.javaparser.ast.stmt.Statement;
 import com.github.javaparser.resolution.declarations.ResolvedMethodDeclaration;
+import org.jdepoix.testrelationfinder.relation.ResolvedTestRelation;
+import org.jdepoix.testrelationfinder.relation.TestRelation;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -16,7 +18,7 @@ import java.util.Set;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
-public class GivenWhenThenResolver {
+public class GWTSectionResolver {
     private static final Set<String> JUNIT_ASSERTIONS = Set.of(
         "assertSame",
         "assertNotNull",
@@ -45,9 +47,11 @@ public class GivenWhenThenResolver {
     );
     private static final String WHEN_TOKEN = "<WHEN>";
 
-    public GivenWhenThenRelation resolve(TestRelation testRelation) {
+    public GWTTestRelation resolve(ResolvedTestRelation resolvedTestRelation) {
+        final TestRelation testRelation = resolvedTestRelation.getTestRelation();
+
         if (testRelation.getRelatedMethod().isEmpty()) {
-            return new GivenWhenThenRelation(testRelation, GivenWhenThenRelation.ResolutionStatus.NOT_RESOLVED);
+            return new GWTTestRelation(resolvedTestRelation, GWTTestRelation.ResolutionStatus.NOT_RESOLVED);
         }
 
         final MethodDeclaration testMethod = testRelation.getTestMethod().clone();
@@ -62,9 +66,9 @@ public class GivenWhenThenResolver {
             final String methodCallName = methodCall.getNameAsString();
             if (methodCallName.equals(relatedMethodCallName)) {
                 if (whenCall != null && !methodCall.toString().equals(relatedMethodCallString)) {
-                    return new GivenWhenThenRelation(
-                        testRelation,
-                        GivenWhenThenRelation.ResolutionStatus.MULTIPLE_WHENS_FOUND
+                    return new GWTTestRelation(
+                        resolvedTestRelation,
+                        GWTTestRelation.ResolutionStatus.MULTIPLE_WHENS_FOUND
                     );
                 }
                 whenCall = methodCall;
@@ -74,11 +78,11 @@ public class GivenWhenThenResolver {
         }
 
         if (thenCalls.isEmpty()) {
-            return new GivenWhenThenRelation(testRelation, GivenWhenThenRelation.ResolutionStatus.NO_THEN_FOUND);
+            return new GWTTestRelation(resolvedTestRelation, GWTTestRelation.ResolutionStatus.NO_THEN_FOUND);
         }
 
-        return new GivenWhenThenRelation(
-            testRelation,
+        return new GWTTestRelation(
+            resolvedTestRelation,
             this.parseStatementList(
                 Stream.concat(
                     this.getSetupCode(testRelation.getTestMethod()),
@@ -86,23 +90,24 @@ public class GivenWhenThenResolver {
                 ).collect(Collectors.toList()),
                 relatedMethodCallString
             ),
-            relatedMethodCallString,
-            this.parseStatementList(thenCalls, relatedMethodCallString)
+            this.parseStatementList(thenCalls, relatedMethodCallString),
+            List.of()
         );
     }
 
 
     // TODO
-    public GivenWhenThenRelation resolveTEST(TestRelation testRelation) {
-        // TODO ignore if unresolved when input type has been refactored
+    public GWTTestRelation resolveTEST(ResolvedTestRelation resolvedTestRelation) {
         // TODO do not sub with <WHEN>
-        if (testRelation.getRelatedMethod().isEmpty()) {
-            return new GivenWhenThenRelation(testRelation, GivenWhenThenRelation.ResolutionStatus.NOT_RESOLVED);
+        if (resolvedTestRelation.getResolvedRelatedMethod().isEmpty()) {
+            return new GWTTestRelation(resolvedTestRelation, GWTTestRelation.ResolutionStatus.NOT_RESOLVED);
         }
 
-        final String relatedMethodName = testRelation.getRelatedMethod().get().getNameAsString();
-        // TODO use resolved tested method were possible when it is an input
-        final ResolvedMethodDeclaration resolvedRelatedMethod = testRelation.getRelatedMethod().get().resolve();
+        final String relatedMethodName = resolvedTestRelation
+            .getTestRelation()
+            .getRelatedMethod()
+            .get()
+            .getNameAsString();
 
         boolean whenFound = false;
         // TODO get setup code
@@ -111,7 +116,7 @@ public class GivenWhenThenResolver {
         // TODO get setup code context
         final List<MethodCallExpr> context = new ArrayList<>();
 
-        for (Statement statement : testRelation.getTestMethod().findAll(Statement.class)) {
+        for (Statement statement : resolvedTestRelation.getTestRelation().getTestMethod().findAll(Statement.class)) {
             boolean isAssertionStatement = false;
             boolean statementContainsWhenCall = false;
             for (MethodCallExpr methodCall : statement.findAll(MethodCallExpr.class)) {
@@ -121,10 +126,13 @@ public class GivenWhenThenResolver {
                     try {
                         resolvedMethodCall = methodCall.resolve();
                     } catch (Exception e) {}
-                    if (resolvedMethodCall == null || !resolvedRelatedMethod.equals(resolvedMethodCall)) {
-                        return new GivenWhenThenRelation(
-                            testRelation,
-                            GivenWhenThenRelation.ResolutionStatus.MULTIPLE_WHENS_FOUND
+                    if (
+                        resolvedMethodCall == null
+                        || !resolvedTestRelation.getResolvedRelatedMethod().get().equals(resolvedMethodCall)
+                    ) {
+                        return new GWTTestRelation(
+                            resolvedTestRelation,
+                            GWTTestRelation.ResolutionStatus.MULTIPLE_WHENS_FOUND
                         );
                     }
                     statementContainsWhenCall = true;
@@ -136,9 +144,9 @@ public class GivenWhenThenResolver {
             }
 
             if (statementContainsWhenCall && !then.isEmpty()) {
-                return new GivenWhenThenRelation(
-                    testRelation,
-                    GivenWhenThenRelation.ResolutionStatus.VIOLATES_SAP
+                return new GWTTestRelation(
+                    resolvedTestRelation,
+                    GWTTestRelation.ResolutionStatus.VIOLATES_SAP
                 );
             }
 
@@ -154,7 +162,10 @@ public class GivenWhenThenResolver {
         }
 
         if (then.isEmpty()) {
-            return new GivenWhenThenRelation(testRelation, GivenWhenThenRelation.ResolutionStatus.NO_THEN_FOUND);
+            return new GWTTestRelation(
+                resolvedTestRelation,
+                GWTTestRelation.ResolutionStatus.NO_THEN_FOUND
+            );
         }
 
         // TODO create final object

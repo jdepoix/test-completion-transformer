@@ -1,10 +1,13 @@
 package org.jdepoix.testrelationfinder;
 
 import org.jdepoix.testrelationfinder.archive.ArchiveHandler;
+import org.jdepoix.testrelationfinder.gwt.GWTContextResolver;
+import org.jdepoix.testrelationfinder.gwt.GWTSectionResolver;
 import org.jdepoix.testrelationfinder.manager.RelationFinderRunner;
 import org.jdepoix.testrelationfinder.manager.RepoFileManager;
 import org.jdepoix.testrelationfinder.relation.*;
-import org.jdepoix.testrelationfinder.reporting.SQLiteReporter;
+import org.jdepoix.testrelationfinder.reporting.ReportCreator;
+import org.jdepoix.testrelationfinder.reporting.SQLiteReportStore;
 import org.jdepoix.testrelationfinder.testmethod.Extractor;
 
 import java.io.IOException;
@@ -18,10 +21,12 @@ public class App {
             new Extractor(),
             new Finder(),
             new ArchiveHandler(workingDir.resolve("temp")),
-            new GivenWhenThenResolver(),
             new TestRelationResolver(),
+            new GWTSectionResolver(),
+            new GWTContextResolver(),
+            new ReportCreator(),
             new RepoFileManager(workingDir.resolve("repos")),
-            new SQLiteReporter(workingDir.resolve("test_relations_index.sqlite"))
+            new SQLiteReportStore(workingDir.resolve("test_relations_index.sqlite"))
         ).run(Path.of(args[0]));
     }
 }

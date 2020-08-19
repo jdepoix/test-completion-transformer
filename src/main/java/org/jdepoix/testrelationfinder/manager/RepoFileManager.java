@@ -1,6 +1,6 @@
 package org.jdepoix.testrelationfinder.manager;
 
-import org.jdepoix.testrelationfinder.relation.ResolvedTestRelation;
+import org.jdepoix.testrelationfinder.reporting.TestRelationReportEntry;
 
 import java.io.IOException;
 import java.nio.file.Files;
@@ -13,10 +13,11 @@ public class RepoFileManager {
         this.basePath = basePath;
     }
 
-    public void saveFiles(String repoName, Path repoBasePath, ResolvedTestRelation testRelation) {
-        testRelation.getRelatedMethodPath().ifPresent(relatedMethodPath -> {
+    public void saveFiles(String repoName, Path repoBasePath, TestRelationReportEntry testRelationReportEntry) {
+        // TODO save context
+        testRelationReportEntry.getRelatedMethodPath().ifPresent(relatedMethodPath -> {
             try {
-                this.copyFile(repoName, repoBasePath, testRelation.getTestPath());
+                this.copyFile(repoName, repoBasePath, testRelationReportEntry.getTestPath());
                 this.copyFile(repoName, repoBasePath, relatedMethodPath);
             } catch (IOException e) {
                 throw new RuntimeException(e);

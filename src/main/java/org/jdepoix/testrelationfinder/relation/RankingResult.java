@@ -4,16 +4,16 @@ class RankingResult<T> implements Comparable<RankingResult<T>> {
     private final T entity;
     private final double score;
 
-    public RankingResult(T entity, double score) {
+    RankingResult(T entity, double score) {
         this.entity = entity;
         this.score = score;
     }
 
-    public double getScore() {
+    double getScore() {
         return score;
     }
 
-    public T getEntity() {
+    T getEntity() {
         return entity;
     }
 

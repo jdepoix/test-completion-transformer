@@ -6,31 +6,31 @@ import com.github.javaparser.ast.expr.MethodCallExpr;
 import java.util.Optional;
 
 public class TestRelation {
-    public static class Builder {
+    static class Builder {
         private Optional<MethodDeclaration> testMethod = Optional.empty();
         private Optional<MethodCallExpr> relatedMethod = Optional.empty();
         private Optional<Type> type = Optional.empty();
 
-        public Builder setTestMethod(MethodDeclaration testMethod) {
+        Builder setTestMethod(MethodDeclaration testMethod) {
             this.testMethod = Optional.of(testMethod);
             return this;
         }
 
-        public Builder setRelatedMethod(MethodCallExpr relatedMethod) {
+        Builder setRelatedMethod(MethodCallExpr relatedMethod) {
             this.relatedMethod = Optional.of(relatedMethod);
             return this;
         }
 
-        public Builder setType(Type type) {
+        Builder setType(Type type) {
             this.type = Optional.ofNullable(type);
             return this;
         }
 
-        public Optional<Type> getType() {
+        Optional<Type> getType() {
             return this.type;
         }
 
-        public TestRelation build() {
+        TestRelation build() {
             return new TestRelation(this.testMethod.get(), this.relatedMethod, this.type.get());
         }
     }
@@ -46,21 +46,21 @@ public class TestRelation {
     private final Optional<MethodCallExpr> relatedMethod;
     private final Type type;
 
-    public TestRelation(MethodDeclaration testMethod, Optional<MethodCallExpr> relatedMethod, Type type) {
+    TestRelation(MethodDeclaration testMethod, Optional<MethodCallExpr> relatedMethod, Type type) {
         this.testMethod = testMethod;
         this.relatedMethod = relatedMethod;
         this.type = type;
     }
 
-    Type getType() {
+    public Type getType() {
         return type;
     }
 
-    Optional<MethodCallExpr> getRelatedMethod() {
+    public Optional<MethodCallExpr> getRelatedMethod() {
         return relatedMethod;
     }
 
-    MethodDeclaration getTestMethod() {
+    public MethodDeclaration getTestMethod() {
         return testMethod;
     }
 }
