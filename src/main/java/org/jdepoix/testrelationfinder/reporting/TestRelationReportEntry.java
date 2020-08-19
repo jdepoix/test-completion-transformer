@@ -6,6 +6,7 @@ import org.jdepoix.testrelationfinder.relation.TestRelation;
 
 import java.nio.file.Path;
 import java.util.List;
+import java.util.Objects;
 import java.util.Optional;
 
 public class TestRelationReportEntry {
@@ -131,5 +132,17 @@ public class TestRelationReportEntry {
 
     public List<TestRelationContextReportEntry> getContext() {
         return context;
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(
+            repoName,
+            testMethodPackageName,
+            testMethodClassName,
+            testMethodName,
+            testMethodSignature,
+            testPath
+        );
     }
 }
