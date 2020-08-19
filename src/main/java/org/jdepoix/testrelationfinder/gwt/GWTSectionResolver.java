@@ -45,60 +45,8 @@ public class GWTSectionResolver {
         "Before",
         "BeforeEach"
     );
-    private static final String WHEN_TOKEN = "<WHEN>";
 
     public GWTTestRelation resolve(ResolvedTestRelation resolvedTestRelation) {
-        final TestRelation testRelation = resolvedTestRelation.getTestRelation();
-
-        if (testRelation.getRelatedMethod().isEmpty()) {
-            return new GWTTestRelation(resolvedTestRelation, GWTTestRelation.ResolutionStatus.NOT_RESOLVED);
-        }
-
-        final MethodDeclaration testMethod = testRelation.getTestMethod().clone();
-
-        final String relatedMethodCallName = testRelation.getRelatedMethod().get().getNameAsString();
-        final String relatedMethodCallString = testRelation.getRelatedMethod().get().toString();
-
-        MethodCallExpr whenCall = null;
-        List<Statement> thenCalls = new ArrayList<>();
-
-        for (MethodCallExpr methodCall : testMethod.findAll(MethodCallExpr.class)) {
-            final String methodCallName = methodCall.getNameAsString();
-            if (methodCallName.equals(relatedMethodCallName)) {
-                if (whenCall != null && !methodCall.toString().equals(relatedMethodCallString)) {
-                    return new GWTTestRelation(
-                        resolvedTestRelation,
-                        GWTTestRelation.ResolutionStatus.MULTIPLE_WHENS_FOUND
-                    );
-                }
-                whenCall = methodCall;
-            } else if (JUNIT_ASSERTIONS.contains(methodCallName)) {
-                this.extractAssertionExpression(methodCall).ifPresent(expressionStmt -> thenCalls.add(expressionStmt));
-            }
-        }
-
-        if (thenCalls.isEmpty()) {
-            return new GWTTestRelation(resolvedTestRelation, GWTTestRelation.ResolutionStatus.NO_THEN_FOUND);
-        }
-
-        return new GWTTestRelation(
-            resolvedTestRelation,
-            this.parseStatementList(
-                Stream.concat(
-                    this.getSetupCode(testRelation.getTestMethod()),
-                    testMethod.getBody().get().getStatements().stream()
-                ).collect(Collectors.toList()),
-                relatedMethodCallString
-            ),
-            this.parseStatementList(thenCalls, relatedMethodCallString),
-            List.of()
-        );
-    }
-
-
-    // TODO
-    public GWTTestRelation resolveTEST(ResolvedTestRelation resolvedTestRelation) {
-        // TODO do not sub with <WHEN>
         if (resolvedTestRelation.getResolvedRelatedMethod().isEmpty()) {
             return new GWTTestRelation(resolvedTestRelation, GWTTestRelation.ResolutionStatus.NOT_RESOLVED);
         }
@@ -110,13 +58,15 @@ public class GWTSectionResolver {
             .getNameAsString();
 
         boolean whenFound = false;
-        // TODO get setup code
-        final List<Statement> given = new ArrayList<>();
+        final MethodDeclaration testMethod = resolvedTestRelation.getTestRelation().getTestMethod();
+        final List<Statement> given = this.getSetupCode(testMethod);
         final List<Statement> then = new ArrayList<>();
-        // TODO get setup code context
-        final List<MethodCallExpr> context = new ArrayList<>();
+        final List<MethodCallExpr> context = given
+            .stream()
+            .flatMap(statement -> statement.findAll(MethodCallExpr.class).stream())
+            .collect(Collectors.toList());
 
-        for (Statement statement : resolvedTestRelation.getTestRelation().getTestMethod().findAll(Statement.class)) {
+        for (Statement statement : testMethod.findAll(Statement.class)) {
             boolean isAssertionStatement = false;
             boolean statementContainsWhenCall = false;
             for (MethodCallExpr methodCall : statement.findAll(MethodCallExpr.class)) {
@@ -168,16 +118,15 @@ public class GWTSectionResolver {
             );
         }
 
-        // TODO create final object
-        // TODO resolve context
-        return null;
+        return new GWTTestRelation(
+            resolvedTestRelation,
+            given.stream().map(Statement::toString).collect(Collectors.joining("\n")),
+            then.stream().map(Statement::toString).collect(Collectors.joining("\n")),
+            context
+        );
     }
 
-
-
-
-
-    private Stream<Statement> getSetupCode(MethodDeclaration testMethod) {
+    private List<Statement> getSetupCode(MethodDeclaration testMethod) {
         List<Statement> beforeClass = new ArrayList<>();
         List<Statement> beforeEach = new ArrayList<>();
 
@@ -192,30 +141,7 @@ public class GWTSectionResolver {
             }
         }
 
-        return Stream.concat(beforeClass.stream(), beforeEach.stream());
-    }
-
-    private Optional<ExpressionStmt> extractAssertionExpression(MethodCallExpr assertionCall) {
-        final Node expression = assertionCall.getParentNode().get();
-        expression.getParentNode().get().remove(expression);
-        if (!(expression instanceof ExpressionStmt)) {
-            return Optional.empty();
-        }
-        return Optional.of((ExpressionStmt) expression);
-    }
-
-    private String parseASTToMaskedString(Node ast, String relatedMethodCallString) {
-        return ast.toString().replace(relatedMethodCallString, WHEN_TOKEN);
-    }
-
-    private String parseStatementList(
-        List<Statement> statementList,
-        String relatedMethodCallString
-    ) {
-        return statementList
-            .stream()
-            .map(statement -> this.parseASTToMaskedString(statement, relatedMethodCallString))
-            .collect(Collectors.joining("\n"));
+        return Stream.concat(beforeClass.stream(), beforeEach.stream()).collect(Collectors.toList());
     }
 
     private ClassOrInterfaceDeclaration findParentClass(Node node) {
