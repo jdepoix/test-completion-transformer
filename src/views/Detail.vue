@@ -29,13 +29,17 @@
 
         <div class="col-12 mb-4" v-if="testRelation.gwt_resolution_status === 'RESOLVED'">
           <div class="card">
+            <div class="card-body" v-if="context">
+              <h5>Context</h5>
+              <pre v-for="contextItem in context" :key="contextItem.id" v-highlight-syntax class="m-0 mb-1"><code class="java">{{ `${contextItem.package}.${contextItem.class}.${contextItem.method}` }}</code></pre>
+            </div>
             <div class="card-body">
               <h5>Given</h5>
               <pre v-highlight-syntax class="m-0"><code class="java" v-html="highlightRelevantCodePart(testRelation.given_section, 'WHEN')"></code></pre>
             </div>
             <div class="card-body">
               <h5>When</h5>
-              <pre v-highlight-syntax class="m-0"><code class="java">{{ testRelation.when_section }}</code></pre>
+              <pre v-highlight-syntax class="m-0"><code class="java">{{ testRelation.related_method }}</code></pre>
             </div>
             <div class="card-body">
               <h5>Then</h5>
@@ -58,6 +62,7 @@
 </template>
 
 <script>
+import hash from 'object-hash';
 import testRelationApi from '../core/test-relation-api.js';
 import repoFileApi from '../core/repo-file-api';
 import HighlightSyntax from '../directives/highlight-syntax.js';
@@ -67,7 +72,8 @@ export default {
   data: () => ({
     testRelation: null,
     testFile: null,
-    relatedFile: null
+    relatedFile: null,
+    context: null,
   }),
   directives: {
     HighlightSyntax: new HighlightSyntax()
@@ -83,7 +89,14 @@ export default {
     loadTestRelation() {
       testRelationApi.getRepo(this.$route.params.id).then(result => {
         this.testRelation = result;
+        if (this.testRelation.when_section) {
+          this.testRelation.when_section = this.testRelation.when_section.replace(`.${this.testRelation.related_method}(`, '.<WHEN>(')
+        }
+        if (this.testRelation.given_section) {
+          this.testRelation.given_section = this.testRelation.given_section.replace(`.${this.testRelation.related_method}(`, '.<WHEN>(')
+        }
         this._loadFiles();
+        this._loadContext();
       })
     },
     _loadFiles() {
@@ -99,6 +112,20 @@ export default {
           }
         );
       }
+    },
+    _loadContext() {
+      testRelationApi.getContext(this.testRelation.id).then(context => {
+        this.context = [];
+        let signatures = {};
+        context.forEach(contextItem => {
+          let signature = `${contextItem.package}.${contextItem.class}.${contextItem.method}`;
+          if (!(signature in signatures)) {
+            contextItem["id"] = hash(contextItem);
+            this.context.push(contextItem);
+            signatures[signature] = true;
+          }
+        });
+      });
     },
     scrollHighlightedMethodIntoView(parent) {
       if (parent) {

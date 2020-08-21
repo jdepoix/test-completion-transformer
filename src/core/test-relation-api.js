@@ -16,6 +16,10 @@ class TestRelationApi {
     async getRepo(id) {
         return await fetch(`${this.apiUrl}/${TestRelationApi._ENTITY_NAME}/${id}`).then(response => response.json());
     }
+
+    async getContext(id) {
+        return await fetch(`${this.apiUrl}/${TestRelationApi._ENTITY_NAME}/${id}/context`).then(response => response.json());
+    }
 }
 
 export default new TestRelationApi('http://localhost:8888/api');
