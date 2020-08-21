@@ -15,7 +15,6 @@ CREATE TABLE IF NOT EXISTS test_relations (
     related_method_signature TEXT,
     related_file_path TEXT,
     given_section TEXT,
-    when_section TEXT,
     then_section TEXT
 );
 

@@ -20,7 +20,7 @@ public class TestRelationContextReportEntry {
         String className,
         String methodName,
         String methodSignature,
-        Path path
+        Optional<Path> path
     ) {
         this.resolutionStatus = GWTContext.ResolutionStatus.RESOLVED;
         this.methodCall = methodCall;
@@ -28,7 +28,7 @@ public class TestRelationContextReportEntry {
         this.className = Optional.of(className);
         this.methodName = Optional.of(methodName);
         this.methodSignature = Optional.of(methodSignature);
-        this.path = Optional.of(path);
+        this.path = path;
     }
 
     public TestRelationContextReportEntry(String methodCall) {

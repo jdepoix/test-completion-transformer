@@ -5,15 +5,12 @@ import com.github.javaparser.ast.body.ClassOrInterfaceDeclaration;
 import com.github.javaparser.ast.body.MethodDeclaration;
 import com.github.javaparser.ast.expr.AnnotationExpr;
 import com.github.javaparser.ast.expr.MethodCallExpr;
-import com.github.javaparser.ast.stmt.ExpressionStmt;
 import com.github.javaparser.ast.stmt.Statement;
 import com.github.javaparser.resolution.declarations.ResolvedMethodDeclaration;
 import org.jdepoix.testrelationfinder.relation.ResolvedTestRelation;
-import org.jdepoix.testrelationfinder.relation.TestRelation;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -47,7 +44,10 @@ public class GWTSectionResolver {
     );
 
     public GWTTestRelation resolve(ResolvedTestRelation resolvedTestRelation) {
-        if (resolvedTestRelation.getResolvedRelatedMethod().isEmpty()) {
+        if (
+            resolvedTestRelation.getResolutionStatus() != ResolvedTestRelation.ResolutionStatus.RESOLVED
+            || resolvedTestRelation.getResolvedRelatedMethod().isEmpty()
+        ) {
             return new GWTTestRelation(resolvedTestRelation, GWTTestRelation.ResolutionStatus.NOT_RESOLVED);
         }
 
@@ -66,7 +66,7 @@ public class GWTSectionResolver {
             .flatMap(statement -> statement.findAll(MethodCallExpr.class).stream())
             .collect(Collectors.toList());
 
-        for (Statement statement : testMethod.findAll(Statement.class)) {
+        for (Statement statement : testMethod.getBody().get().getStatements()) {
             boolean isAssertionStatement = false;
             boolean statementContainsWhenCall = false;
             for (MethodCallExpr methodCall : statement.findAll(MethodCallExpr.class)) {
@@ -78,7 +78,11 @@ public class GWTSectionResolver {
                     } catch (Exception e) {}
                     if (
                         resolvedMethodCall == null
-                        || !resolvedTestRelation.getResolvedRelatedMethod().get().equals(resolvedMethodCall)
+                        || !resolvedTestRelation
+                            .getResolvedRelatedMethod()
+                            .get()
+                            .getQualifiedSignature()
+                            .equals(resolvedMethodCall.getQualifiedSignature())
                     ) {
                         return new GWTTestRelation(
                             resolvedTestRelation,

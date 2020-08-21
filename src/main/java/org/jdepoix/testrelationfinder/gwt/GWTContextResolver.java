@@ -7,7 +7,7 @@ import java.util.stream.Collectors;
 public class GWTContextResolver {
     public ResolvedGWTTestRelation resolve(GWTTestRelation testRelation) {
         if (
-            !testRelation.getResolutionStatus().equals(GWTTestRelation.ResolutionStatus.RESOLVED)
+            testRelation.getResolutionStatus() != GWTTestRelation.ResolutionStatus.RESOLVED
             || testRelation.getContext().get().isEmpty()
         ) {
             return new ResolvedGWTTestRelation(testRelation);

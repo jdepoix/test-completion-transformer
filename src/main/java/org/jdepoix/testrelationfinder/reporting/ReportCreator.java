@@ -3,6 +3,7 @@ package org.jdepoix.testrelationfinder.reporting;
 import com.github.javaparser.ast.body.MethodDeclaration;
 import com.github.javaparser.resolution.declarations.ResolvedMethodDeclaration;
 import com.github.javaparser.resolution.declarations.ResolvedMethodLikeDeclaration;
+import com.github.javaparser.symbolsolver.reflectionmodel.ReflectionMethodDeclaration;
 import org.jdepoix.testrelationfinder.gwt.GWTContext;
 import org.jdepoix.testrelationfinder.gwt.GWTTestRelation;
 import org.jdepoix.testrelationfinder.gwt.ResolvedGWTTestRelation;
@@ -70,16 +71,27 @@ public class ReportCreator {
         }
 
         final ResolvedMethodDeclaration resolvedMethod = context.getResolvedMethod().get();
-        final MethodDeclaration methodDeclaration = resolvedMethod.toAst().get();
+        final Optional<MethodDeclaration> methodDeclarationOptional = resolvedMethod.toAst();
+        if (methodDeclarationOptional.isEmpty() && !(resolvedMethod instanceof ReflectionMethodDeclaration)) {
+            return new TestRelationContextReportEntry(context.getMethodCall().toString());
+        }
+
         return new TestRelationContextReportEntry(
             context.getMethodCall().toString(),
             resolvedMethod.getPackageName(),
             resolvedMethod.getClassName(),
             resolvedMethod.getName(),
-            methodDeclaration.getDeclarationAsString(),
-            this.resolveRelativeFilePath(
-                basePath,
-                methodDeclaration.findCompilationUnit().get().getStorage().get().getPath()
+            methodDeclarationOptional.map(MethodDeclaration::getDeclarationAsString).orElseGet(() -> {
+                final String methodSignature = resolvedMethod
+                    .toString()
+                    .split("ReflectionMethodDeclaration\\{method=")[1];
+                return methodSignature.substring(0, methodSignature.length() - 1);
+            }),
+            methodDeclarationOptional.map(methodDeclaration ->
+                this.resolveRelativeFilePath(
+                    basePath,
+                    methodDeclaration.findCompilationUnit().get().getStorage().get().getPath()
+                )
             )
         );
     }

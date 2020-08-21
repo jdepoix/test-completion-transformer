@@ -44,7 +44,7 @@ public class TestRelation {
 
     private final MethodDeclaration testMethod;
     private final Optional<MethodCallExpr> relatedMethod;
-    private final Type type;
+    private Type type;
 
     TestRelation(MethodDeclaration testMethod, Optional<MethodCallExpr> relatedMethod, Type type) {
         this.testMethod = testMethod;
@@ -54,6 +54,10 @@ public class TestRelation {
 
     public Type getType() {
         return type;
+    }
+
+    public void setType(Type type) {
+        this.type = type;
     }
 
     public Optional<MethodCallExpr> getRelatedMethod() {
