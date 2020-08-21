@@ -4,8 +4,11 @@
     <div class="input-group mb-3 mt-5">
       <input v-model="searchValue" type="text" class="form-control" placeholder="Repo name" aria-labzel="Repo name" aria-describedby="search-repo">
       <div class="input-group-append">
-        <button class="btn btn-primary" type="button" id="search-repo" @click="loadRepos()">Filter</button>
+        <button class="btn btn-secondary" type="button" id="search-repo" @click="loadRepos()">Filter</button>
       </div>
+      <router-link :to="'/test-relation/random'">
+        <button type="button" class="btn btn-primary ml-2">Get random</button>
+      </router-link>
     </div>
     <ul class="list-group">
       <li v-for="result in searchResults" :key="result.id" class="list-group-item">
