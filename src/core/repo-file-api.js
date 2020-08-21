@@ -4,8 +4,8 @@ class RepoFileApi {
     }
 
     async getFileContent(filePath) {
-        return await fetch(`${this.apiUrl}/${filePath}`).then(response => response.text());
+        return await fetch(`${this.apiUrl}/files/${filePath}`).then(response => response.text());
     }
 }
 
-export default new RepoFileApi('http://localhost:9999/files');
+export default new RepoFileApi('http://localhost:8888/api');

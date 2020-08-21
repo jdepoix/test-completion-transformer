@@ -39,7 +39,7 @@ export default {
     loadRepos() {
       testRelationApi.listRepos(this.page, this.searchValue).then(
         result => {
-          this.searchResults = result.resources
+          this.searchResults = result
         }
       );
     },
