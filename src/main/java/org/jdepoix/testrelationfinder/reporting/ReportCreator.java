@@ -28,7 +28,7 @@ public class ReportCreator {
         final Optional<ResolvedMethodDeclaration> resolvedRelatedMethod = resolvedTestRelation
             .getResolvedRelatedMethod();
         final Optional<MethodDeclaration> resolvedRelatedAst = resolvedRelatedMethod
-            .map(resolvedMethodDeclaration -> resolvedMethodDeclaration.toAst().get());
+            .map(resolvedMethodDeclaration -> resolvedMethodDeclaration.toAst().orElse(null));
 
         return new TestRelationReportEntry(
             repoName,
