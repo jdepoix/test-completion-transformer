@@ -50,7 +50,7 @@ public class RelationFinderRunner {
         this.reportStore = reportStore;
     }
 
-    public void run(Path repoBasePath) throws IOException, SQLException {
+    public void run(Path repoBasePath) throws SQLException, IOException {
         final Path unpackedArchivePath = this.archiveHandler.unpackArchive(repoBasePath);
         try {
             this.runRelationDetection(this.getRepoName(repoBasePath), unpackedArchivePath);
@@ -65,7 +65,7 @@ public class RelationFinderRunner {
             .collect(Collectors.joining("/"));
     }
 
-    private void runRelationDetection(String repoName, Path path) throws SQLException {
+    private void runRelationDetection(String repoName, Path path) throws SQLException, IOException {
         final List<TestRelationReportEntry> resolvedTestRelations = this.relationFinder
             .findTestRelations(this.testExtractor.extractTestMethods(path))
             .map(this.testRelationResolver::resolve)

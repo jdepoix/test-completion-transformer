@@ -10,6 +10,7 @@ import org.jdepoix.testrelationfinder.relation.TestRelationResolver;
 import org.jdepoix.testrelationfinder.reporting.ReportCreator;
 import org.jdepoix.testrelationfinder.reporting.SQLiteReportStore;
 import org.jdepoix.testrelationfinder.testmethod.Extractor;
+import org.jdepoix.testrelationfinder.sqlite.ConnectionHandler;
 
 import java.io.IOException;
 import java.nio.file.Path;
@@ -27,7 +28,7 @@ public class App {
             new GWTContextResolver(),
             new ReportCreator(),
             new RepoFileManager(workingDir.resolve("repos")),
-            new SQLiteReportStore(workingDir.resolve("test_relations_index.sqlite"))
+            new SQLiteReportStore(new ConnectionHandler(workingDir.resolve("test_relations_index.sqlite")))
         ).run(Path.of(args[0]));
     }
 }
