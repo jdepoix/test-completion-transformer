@@ -12,12 +12,10 @@ import org.jdepoix.testrelationfinder.reporting.SQLiteReportStore;
 import org.jdepoix.testrelationfinder.testmethod.Extractor;
 import org.jdepoix.testrelationfinder.sqlite.ConnectionHandler;
 
-import java.io.IOException;
 import java.nio.file.Path;
-import java.sql.SQLException;
 
 public class App {
-    public static void main(String[] args) throws IOException, SQLException {
+    public static void main(String[] args) throws Exception {
         final Path workingDir = Path.of(args[1]);
         new RelationFinderRunner(
             new Extractor(),

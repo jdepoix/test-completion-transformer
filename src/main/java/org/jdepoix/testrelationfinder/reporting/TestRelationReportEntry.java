@@ -8,8 +8,10 @@ import java.nio.file.Path;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.UUID;
 
 public class TestRelationReportEntry {
+    private final int id;
     private final String repoName;
     private final TestRelation.Type relationType;
     private final ResolvedTestRelation.ResolutionStatus resolutionStatus;
@@ -47,6 +49,7 @@ public class TestRelationReportEntry {
         Optional<String> then,
         List<TestRelationContextReportEntry> context
     ) {
+        this.id = UUID.randomUUID().hashCode();
         this.repoName = repoName;
         this.relationType = relationType;
         this.resolutionStatus = resolutionStatus;
@@ -64,6 +67,10 @@ public class TestRelationReportEntry {
         this.given = given;
         this.then = then;
         this.context = context;
+    }
+
+    public int getId() {
+        return id;
     }
 
     public String getRepoName() {
@@ -132,17 +139,5 @@ public class TestRelationReportEntry {
 
     public List<TestRelationContextReportEntry> getContext() {
         return context;
-    }
-
-    @Override
-    public int hashCode() {
-        return Objects.hash(
-            repoName,
-            testMethodPackageName,
-            testMethodClassName,
-            testMethodName,
-            testMethodSignature,
-            testPath
-        );
     }
 }

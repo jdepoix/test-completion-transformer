@@ -2,7 +2,6 @@ package org.jdepoix.testrelationfinder.reporting;
 
 import org.jdepoix.testrelationfinder.sqlite.ConnectionHandler;
 
-import java.io.IOException;
 import java.nio.file.Path;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
@@ -27,14 +26,11 @@ public class SQLiteReportStore {
         this.connectionHandler = connectionHandler;
     }
 
-    public void storeReport(String repoName, List<TestRelationReportEntry> reportEntries)
-        throws SQLException, IOException
-    {
-        try (
-            final Connection connection = this.connectionHandler.getConnection()
-        ) {
+    public void storeReport(List<TestRelationReportEntry> reportEntries) throws Exception {
+        Connection connection = this.connectionHandler.getConnection();
+        try (this.connectionHandler) {
             connection.setAutoCommit(false);
-            this.insertTestRelations(connection, repoName, reportEntries);
+            this.insertTestRelations(connection, reportEntries);
             this.insertTestContext(connection, reportEntries
                 .stream()
                 .flatMap(testRelationReportEntry ->
@@ -43,7 +39,7 @@ public class SQLiteReportStore {
                         .stream()
                         .map(testRelationContextReportEntry ->
                             new AbstractMap.SimpleEntry<>(
-                                testRelationReportEntry.hashCode(),
+                                testRelationReportEntry.getId(),
                                 testRelationContextReportEntry
                             )
                         )
@@ -56,7 +52,6 @@ public class SQLiteReportStore {
 
     private void insertTestRelations(
         Connection connection,
-        String repoName,
         List<TestRelationReportEntry> reportEntries
     ) throws SQLException
     {
@@ -67,8 +62,8 @@ public class SQLiteReportStore {
                 preparedStatement,
                 reportEntries,
                 (statement, data) -> {
-                    statement.setInt(1, data.hashCode());
-                    statement.setString(2, repoName);
+                    statement.setInt(1, data.getId());
+                    statement.setString(2, data.getRepoName());
                     statement.setString(3, data.getRelationType().toString());
                     statement.setString(4, data.getResolutionStatus().toString());
                     statement.setString(5, data.getGwtResolutionStatus().toString());

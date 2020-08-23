@@ -21,27 +21,41 @@ public class ConnectionHandler implements AutoCloseable {
     }
 
     public Connection getConnection() throws SQLException, IOException {
-        this.acquireLock();
+        if (this.connection != null) {
+            return this.connection;
+        }
+
         try {
+            this.acquireLock();
             this.connection = DriverManager.getConnection(String.format("jdbc:sqlite:%s", this.dbFile.toString()));
-        } finally {
-            this.releaseLock();
+        } catch (Exception exception) {
+            this.closeConnectionAndRelease();
+            throw exception;
         }
         return this.connection;
     }
 
     @Override
     public void close() throws Exception {
+        this.closeConnectionAndRelease();
+    }
+
+    private void closeConnectionAndRelease() throws SQLException, IOException {
         try {
-            this.connection.close();
+            if (this.connection != null && !this.connection.isClosed()) {
+                this.connection.close();
+            }
         } finally {
             this.releaseLock();
+            this.connection = null;
         }
     }
 
     private void acquireLock() throws IOException {
-        this.releaseLock();
-        this.fileChannel = new RandomAccessFile(this.dbFile.toFile(), "rw").getChannel();
+        this.fileChannel = new RandomAccessFile(
+            this.dbFile.toAbsolutePath().toString() + ".lock",
+            "rw"
+        ).getChannel();
         this.lock = fileChannel.lock();
     }
 
