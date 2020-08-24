@@ -12,7 +12,7 @@ import java.util.Comparator;
 import java.util.stream.Stream;
 
 public class ArchiveHandler {
-    private Path tempUnpackDirectoryRoot;
+    private final Path tempUnpackDirectoryRoot;
 
     public ArchiveHandler(Path tempUnpackDirectoryRoot) {
         this.tempUnpackDirectoryRoot = tempUnpackDirectoryRoot;

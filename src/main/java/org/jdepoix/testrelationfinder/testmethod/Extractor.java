@@ -41,7 +41,7 @@ public class Extractor {
         return sourceRoots
             .stream()
             .filter(sourceRoot -> sourceRoot.getRoot().toString().contains("test"))
-            .map(sourceRoot -> sourceRoot.tryToParseParallelized())
+            .map(SourceRoot::tryToParseParallelized)
             .flatMap(List::stream)
             .map(ParseResult::getResult)
             .filter(Optional::isPresent)

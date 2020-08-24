@@ -1,7 +1,6 @@
 package org.jdepoix.testrelationfinder.gwt;
 
 import com.github.javaparser.ast.expr.MethodCallExpr;
-import com.github.javaparser.ast.stmt.Statement;
 import org.jdepoix.testrelationfinder.relation.ResolvedTestRelation;
 
 import java.util.List;

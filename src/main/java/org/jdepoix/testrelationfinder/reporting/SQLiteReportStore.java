@@ -62,7 +62,7 @@ public class SQLiteReportStore {
                 preparedStatement,
                 reportEntries,
                 (statement, data) -> {
-                    statement.setInt(1, data.getId());
+                    statement.setString(1, data.getId());
                     statement.setString(2, data.getRepoName());
                     statement.setString(3, data.getRelationType().toString());
                     statement.setString(4, data.getResolutionStatus().toString());
@@ -93,7 +93,7 @@ public class SQLiteReportStore {
 
     private void insertTestContext(
         Connection connection,
-        List<AbstractMap.SimpleEntry<Integer, TestRelationContextReportEntry>> reportEntries
+        List<AbstractMap.SimpleEntry<String, TestRelationContextReportEntry>> reportEntries
     ) throws SQLException
     {
         PreparedStatement preparedStatement = null;
@@ -104,7 +104,7 @@ public class SQLiteReportStore {
                 reportEntries,
                 (statement, data) -> {
                     final TestRelationContextReportEntry reportEntry = data.getValue();
-                    statement.setInt(1, data.getKey());
+                    statement.setString(1, data.getKey());
                     statement.setString(2, reportEntry.getResolutionStatus().toString());
                     statement.setString(3, reportEntry.getMethodCall());
                     statement.setString(4, reportEntry.getPackageName().orElse(null));

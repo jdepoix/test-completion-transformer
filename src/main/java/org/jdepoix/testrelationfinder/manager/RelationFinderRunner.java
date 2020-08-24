@@ -10,10 +10,7 @@ import org.jdepoix.testrelationfinder.reporting.SQLiteReportStore;
 import org.jdepoix.testrelationfinder.reporting.TestRelationReportEntry;
 import org.jdepoix.testrelationfinder.testmethod.Extractor;
 
-import java.io.IOException;
 import java.nio.file.Path;
-import java.sql.SQLException;
-import java.util.Arrays;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -60,9 +57,10 @@ public class RelationFinderRunner {
     }
 
     private String getRepoName(Path repoBasePath) {
-        return Arrays
-            .stream(repoBasePath.getFileName().toString().split("\\.tar\\.gz")[0].split("#"))
-            .collect(Collectors.joining("/"));
+        return String.join(
+            "/",
+            repoBasePath.getFileName().toString().split("\\.tar\\.gz")[0].split("#")
+        );
     }
 
     private void runRelationDetection(String repoName, Path path) throws Exception {

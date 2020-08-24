@@ -1,5 +1,5 @@
 CREATE TABLE IF NOT EXISTS test_relations (
-    id INTEGER PRIMARY KEY,
+    id TEXT PRIMARY KEY,
     repo_name TEXT NOT NULL,
     relation_type TEXT NOT NULL,
     resolution_status TEXT NOT NULL,
@@ -19,7 +19,7 @@ CREATE TABLE IF NOT EXISTS test_relations (
 );
 
 CREATE TABLE IF NOT EXISTS test_context (
-    test_relation INTEGER NOT NULL,
+    test_relation_id TEXT NOT NULL,
     resolution_status TEXT NOT NULL,
     method_call TEXT NOT NULL,
     package TEXT,
@@ -27,5 +27,5 @@ CREATE TABLE IF NOT EXISTS test_context (
     method TEXT,
     method_signature TEXT,
     path TEXT,
-    FOREIGN KEY(test_relation) REFERENCES test_relations(id)
+    FOREIGN KEY(test_relation_id) REFERENCES test_relations(id)
 );

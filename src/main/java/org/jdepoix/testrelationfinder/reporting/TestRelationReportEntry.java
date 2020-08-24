@@ -6,12 +6,11 @@ import org.jdepoix.testrelationfinder.relation.TestRelation;
 
 import java.nio.file.Path;
 import java.util.List;
-import java.util.Objects;
 import java.util.Optional;
 import java.util.UUID;
 
 public class TestRelationReportEntry {
-    private final int id;
+    private final String id;
     private final String repoName;
     private final TestRelation.Type relationType;
     private final ResolvedTestRelation.ResolutionStatus resolutionStatus;
@@ -49,7 +48,7 @@ public class TestRelationReportEntry {
         Optional<String> then,
         List<TestRelationContextReportEntry> context
     ) {
-        this.id = UUID.randomUUID().hashCode();
+        this.id = UUID.randomUUID().toString();
         this.repoName = repoName;
         this.relationType = relationType;
         this.resolutionStatus = resolutionStatus;
@@ -69,7 +68,7 @@ public class TestRelationReportEntry {
         this.context = context;
     }
 
-    public int getId() {
+    public String getId() {
         return id;
     }
 
