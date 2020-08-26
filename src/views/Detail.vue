@@ -11,19 +11,29 @@
           <div class="card">
             <div class="card-body">
               <div class="row">
-                <div class="col-3"><span class="font-weight-bold">Repo:</span> <span class="font-technical">{{ testRelation.repo_name }}</span></div>
-                <div class="col-3"><span class="font-weight-bold">Relation Type:</span> <span class="font-technical">{{ testRelation.relation_type }}</span></div>
-                <div class="col-3"><span class="font-weight-bold">Resolution Status:</span> <span class="font-technical">{{ testRelation.resolution_status }}</span></div>
-                <div class="col-3"><span class="font-weight-bold">GWT Resolution Status:</span> <span class="font-technical">{{ testRelation.gwt_resolution_status }}</span></div>
+                <div class="col-12"><span class="font-weight-bold">ID:</span> <span class="font-technical">{{ testRelation.id }}</span></div>
+                <div class="col-6"><span class="font-weight-bold">Repo:</span> <span class="font-technical">{{ testRelation.repo_name }}</span></div>
+                <div class="col-6"><span class="font-weight-bold">Relation Type:</span> <span class="font-technical">{{ testRelation.relation_type }}</span></div>
+                <div class="col-6"><span class="font-weight-bold">Resolution Status:</span> <span class="font-technical">{{ testRelation.resolution_status }}</span></div>
+                <div class="col-6"><span class="font-weight-bold">GWT Resolution Status:</span> <span class="font-technical">{{ testRelation.gwt_resolution_status }}</span></div>
               </div>
             </div>
           </div>
         </div>
         
         <div class="col-12 mb-4" v-if="testFile">
-          <div class="card code-card" id="testFileCodeCard">
-            <div class="card-body">
-              <pre v-highlight-syntax class="m-0"><code class="java" v-html="testFile"></code></pre>
+          <div class="accordion" id="testFileAccordion">
+            <div class="card">
+              <div class="card-header p-1 clickable">
+                <button class="btn btn-block text-left font-technical" type="button" data-toggle="collapse" data-target="#collapseTestFile">
+                  {{ `${testRelation.test_package}.${testRelation.test_class}.${testRelation.test_method}` }}
+                </button>
+              </div>
+              <div id="collapseTestFile" class="collapse show code-card" data-parent="#testFileAccordion">
+                <div class="card-body p-0" >
+                  <pre v-highlight-syntax class="m-0"><code class="java" v-html="testFile"></code></pre>
+                </div>
+              </div>
             </div>
           </div>
         </div>
@@ -68,15 +78,22 @@
             </div>
           </div>
         </div>
-
         <div class="col-12 mb-4" v-if="relatedFile">
-          <div class="card code-card" id="relatedFileCodeCard">
-            <div class="card-body">
-              <pre v-highlight-syntax class="m-0"><code class="java" v-html="relatedFile"></code></pre>
+          <div class="accordion" id="relatedFileAccordion">
+            <div class="card">
+              <div class="card-header p-1 clickable">
+                <button class="btn btn-block text-left font-technical" type="button" data-toggle="collapse" data-target="#collapseRelatedFile">
+                  {{ `${testRelation.related_package}.${testRelation.related_class}.${testRelation.related_method}` }}
+                </button>
+              </div>
+              <div id="collapseRelatedFile" class="collapse show code-card" data-parent="#relatedFileAccordion">
+                <div class="card-body p-0" >
+                  <pre v-highlight-syntax class="m-0"><code class="java" v-html="relatedFile"></code></pre>
+                </div>
+              </div>
             </div>
           </div>
         </div>
-
       </div>
     </div>
   </div>
@@ -103,8 +120,8 @@ export default {
     this.loadTestRelation();
   },
   updated() {
-    this.scrollHighlightedMethodIntoView(document.getElementById("testFileCodeCard"));
-    this.scrollHighlightedMethodIntoView(document.getElementById("relatedFileCodeCard"));
+    this.scrollHighlightedMethodIntoView(document.getElementById("collapseTestFile"));
+    this.scrollHighlightedMethodIntoView(document.getElementById("collapseRelatedFile"));
   },
   methods: {
     loadTestRelation() {
@@ -154,7 +171,7 @@ export default {
     },
     scrollHighlightedMethodIntoView(parent) {
       if (parent) {
-        parent.getElementsByClassName('highlight-method').forEach(element => parent.scrollTop = element.offsetTop);
+        parent.getElementsByClassName('highlight-method').forEach(element => parent.scrollTop = element.offsetTop - 70);
       }
     },
     async getHighlightedFileContent(filepath) {
