@@ -17,6 +17,6 @@ export default {
 
 <style>
 .font-technical {
-  font-family: "Courier New"
+  font-family: SFMono-Regular,Menlo,Monaco,Consolas,"Liberation Mono","Courier New",monospace
 }
 </style>

@@ -11,9 +11,10 @@
           <div class="card">
             <div class="card-body">
               <div class="row">
-                <div class="col-4"><span class="font-weight-bold">Relation Type:</span> <span class="font-technical">{{ testRelation.relation_type }}</span></div>
-                <div class="col-4"><span class="font-weight-bold">Resolution Status:</span> <span class="font-technical">{{ testRelation.resolution_status }}</span></div>
-                <div class="col-4"><span class="font-weight-bold">GWT Resolution Status:</span> <span class="font-technical">{{ testRelation.gwt_resolution_status }}</span></div>
+                <div class="col-3"><span class="font-weight-bold">Repo:</span> <span class="font-technical">{{ testRelation.repo_name }}</span></div>
+                <div class="col-3"><span class="font-weight-bold">Relation Type:</span> <span class="font-technical">{{ testRelation.relation_type }}</span></div>
+                <div class="col-3"><span class="font-weight-bold">Resolution Status:</span> <span class="font-technical">{{ testRelation.resolution_status }}</span></div>
+                <div class="col-3"><span class="font-weight-bold">GWT Resolution Status:</span> <span class="font-technical">{{ testRelation.gwt_resolution_status }}</span></div>
               </div>
             </div>
           </div>
@@ -31,7 +32,27 @@
           <div class="card">
             <div class="card-body" v-if="context">
               <h5>Context</h5>
-              <pre v-for="contextItem in context" :key="contextItem.id" v-highlight-syntax class="m-0 mb-1"><code class="java">{{ `${contextItem.package}.${contextItem.class}.${contextItem.method}` }}</code></pre>
+              <div class="accordion" id="contextAccordion">
+                <div class="card" v-for="contextItem in context" :key="contextItem.id">
+                  <div class="card-header p-1 clickable">
+                    <button class="btn btn-block text-left font-technical" type="button" data-toggle="collapse" :data-target="`#collapseContext${contextItem.id}`">
+                      <span v-if="contextItem.resolution_status === 'RESOLVED'" class="badge badge-success">RESOLVED</span>
+                      <span v-else class="badge badge-danger">UNRESOLVABLE</span>
+                      {{ contextItem.resolution_status === 'RESOLVED' ? `${contextItem.package}.${contextItem.class}.${contextItem.method}` : contextItem.method_call }}
+                    </button>
+                  </div>
+
+                  <div :id="`collapseContext${contextItem.id}`" class="collapse" data-parent="#contextAccordion" v-if="contextItem.resolution_status === 'RESOLVED'">
+                    <div class="card-body code-card p-0" v-if="contextItem.path">
+                      <pre v-highlight-syntax class="m-0" v-if="contextItem.fileContent"><code class="java">{{ contextItem.fileContent }}</code></pre>
+                      <span v-else>LOADING ...</span>
+                    </div>
+                    <div class="card-body code-card p-0" v-else>
+                      <pre v-highlight-syntax class="m-0"><code class="java">/* INTERNAL */</code></pre>
+                    </div>
+                  </div>
+                </div>
+              </div>
             </div>
             <div class="card-body">
               <h5>Given</h5>
@@ -121,6 +142,10 @@ export default {
           let signature = `${contextItem.package}.${contextItem.class}.${contextItem.method}`;
           if (!(signature in signatures)) {
             contextItem["id"] = hash(contextItem);
+            contextItem["fileContent"] = null;
+            if (contextItem.path) {
+              this.getContextFile(contextItem);
+            }
             this.context.push(contextItem);
             signatures[signature] = true;
           }
@@ -137,6 +162,9 @@ export default {
     },
     highlightRelevantCodePart(code, highlightString) {
       return code.replace(highlightString, `<mark class="highlight-method">${highlightString}</mark>`);
+    },
+    getContextFile(contextObject) {
+      repoFileApi.getFileContent(`${this.testRelation.repo_name}/${contextObject.path}`).then(fileContent => contextObject.fileContent = fileContent);
     }
   }
 }

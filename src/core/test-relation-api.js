@@ -22,4 +22,4 @@ class TestRelationApi {
     }
 }
 
-export default new TestRelationApi('http://localhost:8888/api');
+export default new TestRelationApi('http://localhost:5000/api');
