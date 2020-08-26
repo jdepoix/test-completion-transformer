@@ -157,7 +157,7 @@ export default {
         let signatures = {};
         context.forEach(contextItem => {
           let signature = `${contextItem.package}.${contextItem.class}.${contextItem.method}`;
-          if (!(signature in signatures)) {
+          if (contextItem.path === null || !(signature in signatures)) {
             contextItem["id"] = hash(contextItem);
             contextItem["fileContent"] = null;
             if (contextItem.path) {
