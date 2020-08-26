@@ -59,10 +59,10 @@ class Client():
             query += f' WHERE {search.to_query()}'
 
         if pk:
-            query += f' WHERE id = {pk}'
+            query += f' WHERE id = "{pk}"'
 
         if where:
-            query += ' WHERE {}'.format(' AND '.join(f'{key} = {value}' for key, value in where.items()))
+            query += ' WHERE {}'.format(' AND '.join(f'{key} = "{value}"' for key, value in where.items()))
 
         if random_order:
             query += ' ORDER BY RANDOM()'

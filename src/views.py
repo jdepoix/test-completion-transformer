@@ -34,7 +34,7 @@ class TestContext(View):
         return 'test_context'
 
     def get_for_test_relation(self, pk):
-        return self._sqlite_client.list(self.table_name, where={'test_relation': pk})
+        return self._sqlite_client.list(self.table_name, where={'test_relation_id': pk})
 
 
 class Files():
