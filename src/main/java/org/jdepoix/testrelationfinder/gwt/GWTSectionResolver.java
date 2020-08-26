@@ -104,7 +104,7 @@ public class GWTSectionResolver {
                 );
             }
 
-            if (isAssertionStatement && (whenFound || statementContainsWhenCall)) {
+            if (whenFound || isAssertionStatement && statementContainsWhenCall) {
                 then.add(statement);
             } else {
                 given.add(statement);
