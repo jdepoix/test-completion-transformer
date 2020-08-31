@@ -14,7 +14,15 @@ class View(ABC):
         return self._sqlite_client.get(self.table_name, pk)
 
     def get_random(self):
-        return self._sqlite_client.list(self.table_name, page=1, random_order=True)[0]
+        return self._sqlite_client.list(
+            self.table_name,
+            page=1,
+            random_order=True,
+            where={
+                'gwt_resolution_status': 'RESOLVED',
+                'resolution_status': 'RESOLVED',
+            }
+        )[0]
 
     @property
     @abstractmethod

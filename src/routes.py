@@ -11,6 +11,8 @@ import views
 app = Flask(__name__)
 cors = CORS(app)
 
+sqlite_file = f'{os.environ["RESULT_DIR"]}/test_relations_index.sqlite'
+
 
 @app.route('/api/test-relations/', methods=('GET',))
 def list_test_relations():
@@ -18,7 +20,7 @@ def list_test_relations():
     search = request.args.get('search', default=None, type=str)
     return jsonify(
         views.TestRelations(
-            sqlite.Client(f'{os.environ["RESULT_DIR"]}/test_relations_index.sqlite')
+            sqlite.Client(sqlite_file)
         ).list(
             page,
             sqlite.SearchQuery(
@@ -31,27 +33,17 @@ def list_test_relations():
 
 @app.route('/api/test-relations/random', methods=('GET',))
 def get_random_test_relation():
-    return jsonify(
-        views.TestRelations(
-            sqlite.Client(f'{os.environ["RESULT_DIR"]}/test_relations_index.sqlite')
-        ).get_random()
-    )
+    return jsonify(views.TestRelations(sqlite.Client(sqlite_file)).get_random())
 
 
 @app.route('/api/test-relations/<pk>', methods=('GET',))
 def get_test_relation(pk):
-    return jsonify(
-        views.TestRelations(sqlite.Client(os.environ['RESULT_DIR'] + 'test_relations_index.sqlite')).get(pk)
-    )
+    return jsonify(views.TestRelations(sqlite.Client(sqlite_file)).get(pk))
 
 
 @app.route('/api/test-relations/<pk>/context', methods=('GET',))
 def get_test_context(pk):
-    return jsonify(
-        views.TestContext(
-            sqlite.Client(os.environ['RESULT_DIR'] + 'test_relations_index.sqlite')
-        ).get_for_test_relation(pk)
-    )
+    return jsonify(views.TestContext(sqlite.Client(sqlite_file)).get_for_test_relation(pk))
 
 
 @app.route('/api/files/<path:path>', methods=('GET',))
