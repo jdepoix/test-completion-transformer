@@ -127,11 +127,11 @@ export default {
     loadTestRelation() {
       testRelationApi.getRepo(this.$route.params.id).then(result => {
         this.testRelation = result;
-        if (this.testRelation.when_section) {
-          this.testRelation.when_section = this.testRelation.when_section.replace(`.${this.testRelation.related_method}(`, '.<WHEN>(')
-        }
         if (this.testRelation.given_section) {
           this.testRelation.given_section = this.testRelation.given_section.replace(`.${this.testRelation.related_method}(`, '.<WHEN>(')
+        }
+        if (this.testRelation.then_section) {
+          this.testRelation.then_section = this.testRelation.then_section.replace(`.${this.testRelation.related_method}(`, '.<WHEN>(')
         }
         this._loadFiles();
         this._loadContext();
