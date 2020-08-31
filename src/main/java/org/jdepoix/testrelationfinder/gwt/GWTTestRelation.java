@@ -12,6 +12,7 @@ public class GWTTestRelation {
         RESOLVED,
         MULTIPLE_WHENS_FOUND,
         NO_THEN_FOUND,
+        NO_WHEN_FOUND,
         VIOLATES_SAP
     }
 

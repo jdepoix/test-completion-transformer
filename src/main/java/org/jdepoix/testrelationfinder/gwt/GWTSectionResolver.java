@@ -65,6 +65,7 @@ public class GWTSectionResolver {
             .stream()
             .flatMap(statement -> statement.findAll(MethodCallExpr.class).stream())
             .collect(Collectors.toList());
+        List<Statement> cachedStatements = new ArrayList<>();
 
         for (Statement statement : testMethod.getBody().get().getStatements()) {
             boolean isAssertionStatement = false;
@@ -97,29 +98,39 @@ public class GWTSectionResolver {
                 }
             }
 
-            if (statementContainsWhenCall && !then.isEmpty()) {
-                return new GWTTestRelation(
-                    resolvedTestRelation,
-                    GWTTestRelation.ResolutionStatus.VIOLATES_SAP
-                );
-            }
+            if (!then.isEmpty()) {
+                if (statementContainsWhenCall) {
+                    return new GWTTestRelation(resolvedTestRelation, GWTTestRelation.ResolutionStatus.VIOLATES_SAP);
+                }
 
-            if (whenFound || isAssertionStatement && statementContainsWhenCall) {
                 then.add(statement);
-            } else {
-                given.add(statement);
+                continue;
             }
 
             if (statementContainsWhenCall) {
+                given.addAll(cachedStatements);
+                if (isAssertionStatement) {
+                    then.add(statement);
+                } else {
+                    given.add(statement);
+                }
+
+                cachedStatements.clear();
                 whenFound = true;
+            } else if (isAssertionStatement && whenFound) {
+                then.addAll(cachedStatements);
+                then.add(statement);
+            } else {
+                cachedStatements.add(statement);
             }
         }
 
+        if (!whenFound) {
+            return new GWTTestRelation(resolvedTestRelation, GWTTestRelation.ResolutionStatus.NO_WHEN_FOUND);
+        }
+
         if (then.isEmpty()) {
-            return new GWTTestRelation(
-                resolvedTestRelation,
-                GWTTestRelation.ResolutionStatus.NO_THEN_FOUND
-            );
+            return new GWTTestRelation(resolvedTestRelation, GWTTestRelation.ResolutionStatus.NO_THEN_FOUND);
         }
 
         return new GWTTestRelation(
