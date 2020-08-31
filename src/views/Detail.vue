@@ -128,10 +128,10 @@ export default {
       testRelationApi.getRepo(this.$route.params.id).then(result => {
         this.testRelation = result;
         if (this.testRelation.given_section) {
-          this.testRelation.given_section = this.testRelation.given_section.replace(`.${this.testRelation.related_method}(`, '.<WHEN>(')
+          this.testRelation.given_section = this.testRelation.given_section.split(`.${this.testRelation.related_method}(`).join('.<WHEN>(');
         }
         if (this.testRelation.then_section) {
-          this.testRelation.then_section = this.testRelation.then_section.replace(`.${this.testRelation.related_method}(`, '.<WHEN>(')
+          this.testRelation.then_section = this.testRelation.then_section.split(`.${this.testRelation.related_method}(`).join('.<WHEN>(');
         }
         this._loadFiles();
         this._loadContext();
@@ -178,7 +178,7 @@ export default {
       return await repoFileApi.getFileContent(filepath);
     },
     highlightRelevantCodePart(code, highlightString) {
-      return code.replace(highlightString, `<mark class="highlight-method">${highlightString}</mark>`);
+      return code.split(highlightString).join(`<mark class="highlight-method">${highlightString}</mark>`);
     },
     getContextFile(contextObject) {
       repoFileApi.getFileContent(`${this.testRelation.repo_name}/${contextObject.path}`).then(fileContent => contextObject.fileContent = fileContent);
