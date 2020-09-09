@@ -20,16 +20,35 @@
             </div>
           </div>
         </div>
+
+        <div class="col-12 mb-4" v-if="relatedFile">
+          <h2>Code under test</h2>
+          <div class="accordion" id="relatedFileAccordion">
+            <div class="card">
+              <div class="card-header p-1 clickable">
+                <button class="btn btn-block text-left font-technical" type="button" data-toggle="collapse" data-target="#collapseRelatedFile" @click="scrollHighlightedMethodIntoView('collapseRelatedFile')">
+                  {{ `${testRelation.related_package}.${testRelation.related_class}.${testRelation.related_method}` }}
+                </button>
+              </div>
+              <div id="collapseRelatedFile" class="collapse code-card" data-parent="#relatedFileAccordion">
+                <div class="card-body p-0" >
+                  <pre v-highlight-syntax class="m-0"><code class="java" v-html="relatedFile"></code></pre>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
         
         <div class="col-12 mb-4" v-if="testFile">
+          <h2>Test code</h2>
           <div class="accordion" id="testFileAccordion">
             <div class="card">
               <div class="card-header p-1 clickable">
-                <button class="btn btn-block text-left font-technical" type="button" data-toggle="collapse" data-target="#collapseTestFile">
+                <button class="btn btn-block text-left font-technical" type="button" data-toggle="collapse" data-target="#collapseTestFile" @click="scrollHighlightedMethodIntoView('collapseTestFile')">
                   {{ `${testRelation.test_package}.${testRelation.test_class}.${testRelation.test_method}` }}
                 </button>
               </div>
-              <div id="collapseTestFile" class="collapse show code-card" data-parent="#testFileAccordion">
+              <div id="collapseTestFile" class="collapse code-card" data-parent="#testFileAccordion">
                 <div class="card-body p-0" >
                   <pre v-highlight-syntax class="m-0"><code class="java" v-html="testFile"></code></pre>
                 </div>
@@ -40,21 +59,25 @@
 
         <div class="col-12 mb-4" v-if="testRelation.gwt_resolution_status === 'RESOLVED'">
           <div class="card">
-            <div class="card-body" v-if="context">
+            <div class="card-body" v-if="context === null">
+              <h5>Context</h5>
+              <span class="font-technical">LOADING ...</span>
+            </div>
+            <div class="card-body" v-else-if="context.length">
               <h5>Context</h5>
               <div class="accordion" id="contextAccordion">
                 <div class="card" v-for="contextItem in context" :key="contextItem.id">
                   <div class="card-header p-1 clickable">
-                    <button class="btn btn-block text-left font-technical" type="button" data-toggle="collapse" :data-target="`#collapseContext${contextItem.id}`">
+                    <button class="btn btn-block text-left font-technical" type="button" data-toggle="collapse" :data-target="`#collapseContext${contextItem.id}`" @click="scrollHighlightedMethodIntoView(`collapseContext${contextItem.id}`)">
                       <span v-if="contextItem.resolution_status === 'RESOLVED'" class="badge badge-success">RESOLVED</span>
                       <span v-else class="badge badge-danger">UNRESOLVABLE</span>
                       {{ contextItem.resolution_status === 'RESOLVED' ? `${contextItem.package}.${contextItem.class}.${contextItem.method}` : contextItem.method_call }}
                     </button>
                   </div>
 
-                  <div :id="`collapseContext${contextItem.id}`" class="collapse" data-parent="#contextAccordion" v-if="contextItem.resolution_status === 'RESOLVED'">
-                    <div class="card-body code-card p-0" v-if="contextItem.path">
-                      <pre v-highlight-syntax class="m-0" v-if="contextItem.fileContent"><code class="java">{{ contextItem.fileContent }}</code></pre>
+                  <div :id="`collapseContext${contextItem.id}`" class="collapse code-card" data-parent="#contextAccordion" v-if="contextItem.resolution_status === 'RESOLVED'">
+                    <div class="card-body p-0" v-if="contextItem.path">
+                      <pre v-highlight-syntax class="m-0" v-if="contextItem.fileContent"><code class="java" v-html="highlightRelevantCodePart(contextItem.fileContent, contextItem.method_signature)"></code></pre>
                       <span v-else>LOADING ...</span>
                     </div>
                     <div class="card-body code-card p-0" v-else>
@@ -66,7 +89,7 @@
             </div>
             <div class="card-body">
               <h5>Given</h5>
-              <pre v-highlight-syntax class="m-0"><code class="java" v-html="highlightRelevantCodePart(testRelation.given_section, 'WHEN')"></code></pre>
+              <pre v-highlight-syntax class="m-0"><code class="java" v-html="highlightRelevantCodePart(testRelation.substituted_given_section, 'WHEN')"></code></pre>
             </div>
             <div class="card-body">
               <h5>When</h5>
@@ -74,26 +97,33 @@
             </div>
             <div class="card-body">
               <h5>Then</h5>
-              <pre v-highlight-syntax class="m-0"><code class="java" v-html="this.highlightRelevantCodePart(testRelation.then_section, 'WHEN')">testRelation.then_section</code></pre>
+              <pre v-highlight-syntax class="m-0"><code class="java" v-html="highlightRelevantCodePart(testRelation.substituted_then_section, 'WHEN')"></code></pre>
             </div>
           </div>
         </div>
-        <div class="col-12 mb-4" v-if="relatedFile">
-          <div class="accordion" id="relatedFileAccordion">
+
+        <div class="col-12 mb-4" v-if="testRelation.gwt_resolution_status === 'RESOLVED'">
+          <h2>Predictions</h2>
+          <div class="accordion" id="slmPredictionAccordion">
             <div class="card">
               <div class="card-header p-1 clickable">
-                <button class="btn btn-block text-left font-technical" type="button" data-toggle="collapse" data-target="#collapseRelatedFile">
-                  {{ `${testRelation.related_package}.${testRelation.related_class}.${testRelation.related_method}` }}
+                <button class="btn btn-block text-left font-weight-bold" type="button" data-toggle="collapse" data-target="#collapseSlmPredictionAccordion" @click="loadSlmPrediction()">
+                  Structured Language Model
                 </button>
               </div>
-              <div id="collapseRelatedFile" class="collapse show code-card" data-parent="#relatedFileAccordion">
-                <div class="card-body p-0" >
-                  <pre v-highlight-syntax class="m-0"><code class="java" v-html="relatedFile"></code></pre>
+              <div id="collapseSlmPredictionAccordion" class="collapse" data-parent="#slmPredictionAccordion">
+                <div class="card-body">
+                  <span class="font-technical" v-if="testRelation.then_section.includes(`${this.testRelation.related_method}(`)">WHEN call in THEN section!</span>
+                  <ul class="list-group" v-else-if="slmPrediction && slmPrediction.length !== 0">
+                    <li class="list-group-item font-technical" v-for="prediction in slmPrediction[0]" :key="prediction.code">{{ prediction.prob }} - {{ prediction.code }}</li>
+                  </ul>
+                  <span class="font-technical" v-else>LOADING ...</span>
                 </div>
               </div>
             </div>
           </div>
         </div>
+        
       </div>
     </div>
   </div>
@@ -103,6 +133,7 @@
 import hash from 'object-hash';
 import testRelationApi from '../core/test-relation-api.js';
 import repoFileApi from '../core/repo-file-api';
+import slmPredictionApi from '../core/slm-prediction-api';
 import HighlightSyntax from '../directives/highlight-syntax.js';
 
 export default {
@@ -112,6 +143,7 @@ export default {
     testFile: null,
     relatedFile: null,
     context: null,
+    slmPrediction: null,
   }),
   directives: {
     HighlightSyntax: new HighlightSyntax()
@@ -119,19 +151,15 @@ export default {
   mounted() {
     this.loadTestRelation();
   },
-  updated() {
-    this.scrollHighlightedMethodIntoView(document.getElementById("collapseTestFile"));
-    this.scrollHighlightedMethodIntoView(document.getElementById("collapseRelatedFile"));
-  },
   methods: {
     loadTestRelation() {
       testRelationApi.getRepo(this.$route.params.id).then(result => {
         this.testRelation = result;
         if (this.testRelation.given_section) {
-          this.testRelation.given_section = this.testRelation.given_section.split(`${this.testRelation.related_method}(`).join('<WHEN>(');
+          this.testRelation.substituted_given_section = this.testRelation.given_section.split(`${this.testRelation.related_method}(`).join('<WHEN>(');
         }
         if (this.testRelation.then_section) {
-          this.testRelation.then_section = this.testRelation.then_section.split(`${this.testRelation.related_method}(`).join('<WHEN>(');
+          this.testRelation.substituted_then_section = this.testRelation.then_section.split(`${this.testRelation.related_method}(`).join('<WHEN>(');
         }
         this._loadFiles();
         this._loadContext();
@@ -153,7 +181,7 @@ export default {
     },
     _loadContext() {
       testRelationApi.getContext(this.testRelation.id).then(context => {
-        this.context = [];
+        let tempContext = [];
         let signatures = {};
         context.forEach(contextItem => {
           let signature = `${contextItem.package}.${contextItem.class}.${contextItem.method}`;
@@ -163,16 +191,20 @@ export default {
             if (contextItem.path) {
               this.getContextFile(contextItem);
             }
-            this.context.push(contextItem);
+            tempContext.push(contextItem);
             signatures[signature] = true;
           }
         });
+        this.context = tempContext;
       });
     },
-    scrollHighlightedMethodIntoView(parent) {
-      if (parent) {
-        parent.getElementsByClassName('highlight-method').forEach(element => parent.scrollTop = element.offsetTop - 70);
-      }
+    scrollHighlightedMethodIntoView(parentId) {
+      setTimeout(() => {
+        let parent = document.getElementById(parentId);
+        if (parent) {
+          parent.getElementsByClassName('highlight-method').forEach(element => parent.scrollTop = element.offsetTop - 70);
+        }
+      }, 1);
     },
     async getHighlightedFileContent(filepath) {
       return await repoFileApi.getFileContent(filepath);
@@ -182,6 +214,16 @@ export default {
     },
     getContextFile(contextObject) {
       repoFileApi.getFileContent(`${this.testRelation.repo_name}/${contextObject.path}`).then(fileContent => contextObject.fileContent = fileContent);
+    },
+    loadSlmPrediction() {
+      if (!this.slmPrediction && !this.testRelation.then_section.includes(`${this.testRelation.related_method}(`)) {
+        this.slmPrediction = [];
+        slmPredictionApi
+          .getPrediction(`@Test public void ${this.testRelation.test_method}() { ${this.testRelation.given_section.split('\n').join(' ')} ?? }`)
+          .then(
+            response => this.slmPrediction = response
+          )
+      }
     }
   }
 }
