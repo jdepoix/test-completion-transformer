@@ -1,8 +1,8 @@
 import os
 
 from flask import Flask, request, jsonify
-
 from flask_cors import CORS
+import requests
 
 import sqlite
 import views
@@ -49,3 +49,10 @@ def get_test_context(pk):
 @app.route('/api/files/<path:path>', methods=('GET',))
 def get_file(path):
     return views.Files(f'{os.environ["RESULT_DIR"]}/repos').get(path)
+
+
+@app.route('/api/predictions/slm', methods=('POST',))
+def predict_slm():
+    return jsonify(
+        requests.post('https://w0w3uc4a63.execute-api.us-east-1.amazonaws.com/prod/predict', json=request.json).json()
+    )
