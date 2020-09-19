@@ -1,4 +1,4 @@
-package org.jdepoix.testrelationfinder.sqlite;
+package org.jdepoix.sqlite;
 
 import java.io.IOException;
 import java.io.RandomAccessFile;

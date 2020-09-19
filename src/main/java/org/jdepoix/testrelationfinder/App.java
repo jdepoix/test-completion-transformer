@@ -10,7 +10,7 @@ import org.jdepoix.testrelationfinder.relation.TestRelationResolver;
 import org.jdepoix.testrelationfinder.reporting.ReportCreator;
 import org.jdepoix.testrelationfinder.reporting.SQLiteReportStore;
 import org.jdepoix.testrelationfinder.testmethod.Extractor;
-import org.jdepoix.testrelationfinder.sqlite.ConnectionHandler;
+import org.jdepoix.sqlite.ConnectionHandler;
 
 import java.nio.file.Path;
 

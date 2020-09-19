@@ -1,6 +1,6 @@
 package org.jdepoix.testrelationfinder.reporting;
 
-import org.jdepoix.testrelationfinder.sqlite.ConnectionHandler;
+import org.jdepoix.sqlite.ConnectionHandler;
 
 import java.nio.file.Path;
 import java.sql.Connection;
