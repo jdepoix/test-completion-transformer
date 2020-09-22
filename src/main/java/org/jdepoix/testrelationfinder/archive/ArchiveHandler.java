@@ -1,5 +1,6 @@
 package org.jdepoix.testrelationfinder.archive;
 
+import org.jdepoix.config.ResultDirConfig;
 import org.rauschig.jarchivelib.ArchiveStream;
 import org.rauschig.jarchivelib.Archiver;
 import org.rauschig.jarchivelib.ArchiverFactory;
@@ -14,8 +15,8 @@ import java.util.stream.Stream;
 public class ArchiveHandler {
     private final Path tempUnpackDirectoryRoot;
 
-    public ArchiveHandler(Path tempUnpackDirectoryRoot) {
-        this.tempUnpackDirectoryRoot = tempUnpackDirectoryRoot;
+    public ArchiveHandler(ResultDirConfig config) {
+        this.tempUnpackDirectoryRoot = config.getTempDir();
     }
 
     public Path unpackArchive(Path archivePath) throws IOException {

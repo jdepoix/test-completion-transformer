@@ -7,7 +7,9 @@ import com.github.javaparser.ast.NodeList;
 import com.github.javaparser.ast.body.ClassOrInterfaceDeclaration;
 import com.github.javaparser.metamodel.BaseNodeMetaModel;
 import com.github.javaparser.metamodel.JavaParserMetaModel;
+import com.github.javaparser.metamodel.NodeMetaModel;
 import com.github.javaparser.metamodel.PropertyMetaModel;
+import org.jdepoix.ast.node.CustomNode;
 
 import java.lang.reflect.Field;
 import java.lang.reflect.InvocationTargetException;
@@ -16,242 +18,50 @@ import java.util.stream.Collectors;
 
 public class App {
     public static void main(String[] args) throws Exception {
-        String code = "//\n" +
-            "// Source code recreated from a .class file by IntelliJ IDEA\n" +
-            "// (powered by FernFlower decompiler)\n" +
-            "//\n" +
+        String code = "import java.swing;\n" +
             "\n" +
-            "package com.github.javaparser.ast.type;\n" +
+            "        /*\n" +
+            "         * Java implementation of the approach\n" +
+            "         */ \n" +
+            "        public class GFG { \n" +
             "\n" +
-            "import com.github.javaparser.TokenRange;\n" +
-            "import com.github.javaparser.ast.AllFieldsConstructor;\n" +
-            "import com.github.javaparser.ast.Node;\n" +
-            "import com.github.javaparser.ast.NodeList;\n" +
-            "import com.github.javaparser.ast.expr.AnnotationExpr;\n" +
-            "import com.github.javaparser.ast.expr.SimpleName;\n" +
-            "import com.github.javaparser.ast.nodeTypes.NodeWithAnnotations;\n" +
-            "import com.github.javaparser.ast.nodeTypes.NodeWithSimpleName;\n" +
-            "import com.github.javaparser.ast.nodeTypes.NodeWithTypeArguments;\n" +
-            "import com.github.javaparser.ast.observer.ObservableProperty;\n" +
-            "import com.github.javaparser.ast.type.PrimitiveType.Primitive;\n" +
-            "import com.github.javaparser.ast.visitor.CloneVisitor;\n" +
-            "import com.github.javaparser.ast.visitor.GenericVisitor;\n" +
-            "import com.github.javaparser.ast.visitor.VoidVisitor;\n" +
-            "import com.github.javaparser.metamodel.ClassOrInterfaceTypeMetaModel;\n" +
-            "import com.github.javaparser.metamodel.JavaParserMetaModel;\n" +
-            "import com.github.javaparser.metamodel.OptionalProperty;\n" +
-            "import com.github.javaparser.resolution.types.ResolvedReferenceType;\n" +
-            "import com.github.javaparser.utils.Utils;\n" +
-            "import java.util.Optional;\n" +
-            "import java.util.function.Consumer;\n" +
-            "import java.util.stream.Collectors;\n" +
+            "            // Function that returns true if \n" +
+            "            // str is a palindrome \n" +
+            "            static boolean isPalindrome(String str) \n" +
+            "            { \n" +
             "\n" +
-            "public class ClassOrInterfaceType extends ReferenceType implements NodeWithSimpleName<ClassOrInterfaceType>, NodeWithAnnotations<ClassOrInterfaceType>, NodeWithTypeArguments<ClassOrInterfaceType> {\n" +
-            "    @OptionalProperty\n" +
-            "    private ClassOrInterfaceType scope;\n" +
-            "    private SimpleName name;\n" +
-            "    @OptionalProperty\n" +
-            "    private NodeList<Type> typeArguments;\n" +
+            "                // Pointers pointing to the beginning \n" +
+            "                // and the end of the string \n" +
+            "                int i = 0, j = str.length() - 1; \n" +
             "\n" +
-            "    public ClassOrInterfaceType() {\n" +
-            "        this((TokenRange)null, (ClassOrInterfaceType)null, new SimpleName(), (NodeList)null, new NodeList());\n" +
-            "    }\n" +
+            "                // While there are characters toc compare \n" +
+            "                while (i < j) { \n" +
             "\n" +
-            "    /** @deprecated */\n" +
-            "    public ClassOrInterfaceType(final String name) {\n" +
-            "        this((TokenRange)null, (ClassOrInterfaceType)null, new SimpleName(name), (NodeList)null, new NodeList());\n" +
-            "    }\n" +
+            "                    // If there is a mismatch \n" +
+            "                    if (str.charAt(i) != str.charAt(j)) \n" +
+            "                        return false; \n" +
             "\n" +
-            "    public ClassOrInterfaceType(final ClassOrInterfaceType scope, final String name) {\n" +
-            "        this((TokenRange)null, scope, new SimpleName(name), (NodeList)null, new NodeList());\n" +
-            "    }\n" +
+            "                    // Increment first pointer and \n" +
+            "                    // decrement the other \n" +
+            "                    i++; \n" +
+            "                    j--; \n" +
+            "                } \n" +
             "\n" +
-            "    public ClassOrInterfaceType(final ClassOrInterfaceType scope, final SimpleName name, final NodeList<Type> typeArguments) {\n" +
-            "        this((TokenRange)null, scope, name, typeArguments, new NodeList());\n" +
-            "    }\n" +
+            "                // Given string is a palindrome \n" +
+            "                return true; \n" +
+            "            } \n" +
             "\n" +
-            "    @AllFieldsConstructor\n" +
-            "    public ClassOrInterfaceType(final ClassOrInterfaceType scope, final SimpleName name, final NodeList<Type> typeArguments, final NodeList<AnnotationExpr> annotations) {\n" +
-            "        this((TokenRange)null, scope, name, typeArguments, annotations);\n" +
-            "    }\n" +
+            "            // Driver code \n" +
+            "            public static void main(String[] args) \n" +
+            "            { \n" +
+            "                String str = \"geeks is a palindrome\"; \n" +
             "\n" +
-            "    public ClassOrInterfaceType(TokenRange tokenRange, ClassOrInterfaceType scope, SimpleName name, NodeList<Type> typeArguments, NodeList<AnnotationExpr> annotations) {\n" +
-            "        super(tokenRange, annotations);\n" +
-            "        this.setScope(scope);\n" +
-            "        this.setName(name);\n" +
-            "        this.setTypeArguments(typeArguments);\n" +
-            "        this.customInitialization();\n" +
-            "    }\n" +
-            "\n" +
-            "    public <R, A> R accept(final GenericVisitor<R, A> v, final A arg) {\n" +
-            "        return v.visit(this, arg);\n" +
-            "    }\n" +
-            "\n" +
-            "    public <A> void accept(final VoidVisitor<A> v, final A arg) {\n" +
-            "        v.visit(this, arg);\n" +
-            "    }\n" +
-            "\n" +
-            "    public SimpleName getName() {\n" +
-            "        return this.name;\n" +
-            "    }\n" +
-            "\n" +
-            "    public Optional<ClassOrInterfaceType> getScope() {\n" +
-            "        return Optional.ofNullable(this.scope);\n" +
-            "    }\n" +
-            "\n" +
-            "    public boolean isBoxedType() {\n" +
-            "        return PrimitiveType.unboxMap.containsKey(this.name.getIdentifier());\n" +
-            "    }\n" +
-            "\n" +
-            "    public PrimitiveType toUnboxedType() throws UnsupportedOperationException {\n" +
-            "        if (!this.isBoxedType()) {\n" +
-            "            throw new UnsupportedOperationException(this.name + \" isn't a boxed type.\");\n" +
-            "        } else {\n" +
-            "            return new PrimitiveType((Primitive)PrimitiveType.unboxMap.get(this.name.getIdentifier()));\n" +
-            "        }\n" +
-            "    }\n" +
-            "\n" +
-            "    public ClassOrInterfaceType setName(final SimpleName name) {\n" +
-            "        Utils.assertNotNull(name);\n" +
-            "        if (name == this.name) {\n" +
-            "            return this;\n" +
-            "        } else {\n" +
-            "            this.notifyPropertyChange(ObservableProperty.NAME, this.name, name);\n" +
-            "            if (this.name != null) {\n" +
-            "                this.name.setParentNode((Node)null);\n" +
-            "            }\n" +
-            "\n" +
-            "            this.name = name;\n" +
-            "            this.setAsParentNodeOf(name);\n" +
-            "            return this;\n" +
-            "        }\n" +
-            "    }\n" +
-            "\n" +
-            "    public ClassOrInterfaceType setScope(final ClassOrInterfaceType scope) {\n" +
-            "        if (scope == this.scope) {\n" +
-            "            return this;\n" +
-            "        } else {\n" +
-            "            this.notifyPropertyChange(ObservableProperty.SCOPE, this.scope, scope);\n" +
-            "            if (this.scope != null) {\n" +
-            "                this.scope.setParentNode((Node)null);\n" +
-            "            }\n" +
-            "\n" +
-            "            this.scope = scope;\n" +
-            "            this.setAsParentNodeOf(scope);\n" +
-            "            return this;\n" +
-            "        }\n" +
-            "    }\n" +
-            "\n" +
-            "    public Optional<NodeList<Type>> getTypeArguments() {\n" +
-            "        return Optional.ofNullable(this.typeArguments);\n" +
-            "    }\n" +
-            "\n" +
-            "    public ClassOrInterfaceType setTypeArguments(final NodeList<Type> typeArguments) {\n" +
-            "        if (typeArguments == this.typeArguments) {\n" +
-            "            return this;\n" +
-            "        } else {\n" +
-            "            this.notifyPropertyChange(ObservableProperty.TYPE_ARGUMENTS, this.typeArguments, typeArguments);\n" +
-            "            if (this.typeArguments != null) {\n" +
-            "                this.typeArguments.setParentNode((Node)null);\n" +
-            "            }\n" +
-            "\n" +
-            "            this.typeArguments = typeArguments;\n" +
-            "            this.setAsParentNodeOf(typeArguments);\n" +
-            "            return this;\n" +
-            "        }\n" +
-            "    }\n" +
-            "\n" +
-            "    public ClassOrInterfaceType setAnnotations(NodeList<AnnotationExpr> annotations) {\n" +
-            "        return (ClassOrInterfaceType)super.setAnnotations(annotations);\n" +
-            "    }\n" +
-            "\n" +
-            "    public boolean remove(Node node) {\n" +
-            "        if (node == null) {\n" +
-            "            return false;\n" +
-            "        } else if (this.scope != null && node == this.scope) {\n" +
-            "            this.removeScope();\n" +
-            "            return true;\n" +
-            "        } else {\n" +
-            "            if (this.typeArguments != null) {\n" +
-            "                for(int i = 0; i < this.typeArguments.size(); ++i) {\n" +
-            "                    if (this.typeArguments.get(i) == node) {\n" +
-            "                        this.typeArguments.remove(i);\n" +
-            "                        return true;\n" +
-            "                    }\n" +
-            "                }\n" +
-            "            }\n" +
-            "\n" +
-            "            return super.remove(node);\n" +
-            "        }\n" +
-            "    }\n" +
-            "\n" +
-            "    public String asString() {\n" +
-            "        StringBuilder str = new StringBuilder();\n" +
-            "        this.getScope().ifPresent((s) -> {\n" +
-            "            str.append(s.asString()).append(\".\");\n" +
-            "        });\n" +
-            "        str.append(this.name.asString());\n" +
-            "        this.getTypeArguments().ifPresent((ta) -> {\n" +
-            "            str.append((String)ta.stream().map(Type::asString).collect(Collectors.joining(\",\", \"<\", \">\")));\n" +
-            "        });\n" +
-            "        return str.toString();\n" +
-            "    }\n" +
-            "\n" +
-            "    public ClassOrInterfaceType removeScope() {\n" +
-            "        return this.setScope((ClassOrInterfaceType)null);\n" +
-            "    }\n" +
-            "\n" +
-            "    public ClassOrInterfaceType clone() {\n" +
-            "        return (ClassOrInterfaceType)this.accept((GenericVisitor)(new CloneVisitor()), (Object)null);\n" +
-            "    }\n" +
-            "\n" +
-            "    public ClassOrInterfaceTypeMetaModel getMetaModel() {\n" +
-            "        return JavaParserMetaModel.classOrInterfaceTypeMetaModel;\n" +
-            "    }\n" +
-            "\n" +
-            "    public boolean replace(Node node, Node replacementNode) {\n" +
-            "        if (node == null) {\n" +
-            "            return false;\n" +
-            "        } else if (node == this.name) {\n" +
-            "            this.setName((SimpleName)replacementNode);\n" +
-            "            return true;\n" +
-            "        } else if (this.scope != null && node == this.scope) {\n" +
-            "            this.setScope((ClassOrInterfaceType)replacementNode);\n" +
-            "            return true;\n" +
-            "        } else {\n" +
-            "            if (this.typeArguments != null) {\n" +
-            "                for(int i = 0; i < this.typeArguments.size(); ++i) {\n" +
-            "                    if (this.typeArguments.get(i) == node) {\n" +
-            "                        this.typeArguments.set(i, (Type)replacementNode);\n" +
-            "                        return true;\n" +
-            "                    }\n" +
-            "                }\n" +
-            "            }\n" +
-            "\n" +
-            "            return super.replace(node, replacementNode);\n" +
-            "        }\n" +
-            "    }\n" +
-            "\n" +
-            "    public boolean isClassOrInterfaceType() {\n" +
-            "        return true;\n" +
-            "    }\n" +
-            "\n" +
-            "    public ClassOrInterfaceType asClassOrInterfaceType() {\n" +
-            "        return this;\n" +
-            "    }\n" +
-            "\n" +
-            "    public void ifClassOrInterfaceType(Consumer<ClassOrInterfaceType> action) {\n" +
-            "        action.accept(this);\n" +
-            "    }\n" +
-            "\n" +
-            "    public ResolvedReferenceType resolve() {\n" +
-            "        return (ResolvedReferenceType)this.getSymbolResolver().toResolvedType(this, ResolvedReferenceType.class);\n" +
-            "    }\n" +
-            "\n" +
-            "    public Optional<ClassOrInterfaceType> toClassOrInterfaceType() {\n" +
-            "        return Optional.of(this);\n" +
-            "    }\n" +
-            "}\n";
+            "                if (isPalindrome(str)) \n" +
+            "                    System.out.print(\"Yes\"); \n" +
+            "                else\n" +
+            "                    System.out.print(\"No\"); \n" +
+            "            } \n" +
+            "        } ";
 
         final CompilationUnit compilationUnit = StaticJavaParser.parse(code);
         final AST ast = AST.serialize(compilationUnit.findFirst(ClassOrInterfaceDeclaration.class).get());
@@ -276,37 +86,6 @@ class ReflectionUtils {
     }
 }
 
-class AST {
-    static class MetaModelNotFound extends Exception {
-        public MetaModelNotFound(String message) {
-            super(message);
-        }
-    }
-
-    private final TypeNode root;
-
-    private AST(TypeNode root) {
-        this.root = root;
-    }
-
-    public static AST serialize(Node rootNode) throws NoSuchFieldException, IllegalAccessException {
-        return new AST(
-            new TypeNode(
-                rootNode.getMetaModel().getType().getName(),
-                ASTNode.serialize(rootNode)
-            )
-        );
-    }
-
-    public static Node deserialize(AST ast) throws ClassNotFoundException, MetaModelNotFound, InvocationTargetException, NoSuchMethodException, InstantiationException, IllegalAccessException {
-        return (Node) ASTNode.deserialize(ast.root);
-    }
-
-    public String printTree() {
-        return this.root.printTree(0);
-    }
-}
-
 // TODO refactor to single node with children, properties, value and type
 abstract class ASTNode {
     public static final Map<String, Class<?>> BOXED_TYPE_MAP = Map.of(
@@ -327,12 +106,17 @@ abstract class ASTNode {
         this.type = type;
     }
 
+    static NodeMetaModel getNodeMetaModel(Node node) {
+        return node instanceof CustomNode ? ((CustomNode) node).getCustomMetaModel() : node.getMetaModel();
+    }
+
     static List<ASTNode> serialize(Node parentNode) throws NoSuchFieldException, IllegalAccessException {
         final ArrayList<ASTNode> entries = new ArrayList<>();
 
-        final List<PropertyMetaModel> constructorParameters = parentNode.getMetaModel().getConstructorParameters();
+        final NodeMetaModel parentNodeMetaModel = getNodeMetaModel(parentNode);
+        final List<PropertyMetaModel> constructorParameters = parentNodeMetaModel.getConstructorParameters();
         if (constructorParameters.isEmpty()) {
-            return List.of(new TerminalNode(parentNode.getMetaModel().getType().getName()));
+            return List.of(new TerminalNode(parentNodeMetaModel.getType().getName()));
         }
 
         for (PropertyMetaModel propertyMetaModel : constructorParameters) {
@@ -347,15 +131,16 @@ abstract class ASTNode {
             if (propertyValue instanceof Node) {
                 final Node propertyNode = (Node) propertyValue;
                 final List<ASTNode> serializedChildren = serialize(propertyNode);
+                final NodeMetaModel nodeMetaModel = getNodeMetaModel(propertyNode);
                 if (serializedChildren.isEmpty()) {
                     entries.add(new PropertyNode(
-                        propertyNode.getMetaModel().getType().getName(),
-                        List.of(new TerminalNode(propertyNode.getMetaModel().getType().getName())),
+                        nodeMetaModel.getType().getName(),
+                        List.of(new TerminalNode(nodeMetaModel.getType().getName())),
                         propertyMetaModel.getName()
                     ));
                 } else {
                     entries.add(new PropertyNode(
-                        propertyNode.getMetaModel().getType().getName(),
+                        nodeMetaModel.getType().getName(),
                         serializedChildren,
                         propertyMetaModel.getName()
                     ));
@@ -373,7 +158,7 @@ abstract class ASTNode {
                             if (serializedChildren.isEmpty()) {
                                 return Optional.<TypeNode>empty();
                             }
-                            return Optional.of(new TypeNode(node.getMetaModel().getType().getName(), serializedChildren));
+                            return Optional.of(new TypeNode(getNodeMetaModel(node).getType().getName(), serializedChildren));
                         } catch (NoSuchFieldException | IllegalAccessException e) {
                             throw new RuntimeException(e);
                         }

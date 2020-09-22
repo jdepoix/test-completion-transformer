@@ -1,5 +1,6 @@
 package org.jdepoix.testrelationfinder.manager;
 
+import org.jdepoix.config.ResultDirConfig;
 import org.jdepoix.testrelationfinder.reporting.TestRelationContextReportEntry;
 import org.jdepoix.testrelationfinder.reporting.TestRelationReportEntry;
 
@@ -10,8 +11,8 @@ import java.nio.file.Path;
 public class RepoFileManager {
     private final Path basePath;
 
-    public RepoFileManager(Path basePath) {
-        this.basePath = basePath;
+    public RepoFileManager(ResultDirConfig config) {
+        this.basePath = config.getRepoDir();
     }
 
     public void saveFiles(String repoName, Path repoBasePath, TestRelationReportEntry testRelationReportEntry) {

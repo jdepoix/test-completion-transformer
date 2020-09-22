@@ -67,6 +67,7 @@ public class GWTSectionResolver {
             .collect(Collectors.toList());
         List<Statement> cachedStatements = new ArrayList<>();
 
+        // TODO save index where then starts in getStatements list
         for (Statement statement : testMethod.getBody().get().getStatements()) {
             boolean isAssertionStatement = false;
             boolean statementContainsWhenCall = false;

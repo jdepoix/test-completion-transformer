@@ -27,8 +27,8 @@ public class SQLiteReportStore {
     }
 
     public void storeReport(List<TestRelationReportEntry> reportEntries) throws Exception {
-        Connection connection = this.connectionHandler.getConnection();
         try (this.connectionHandler) {
+            Connection connection = this.connectionHandler.getConnection();
             connection.setAutoCommit(false);
             this.insertTestRelations(connection, reportEntries);
             this.insertTestContext(connection, reportEntries

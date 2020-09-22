@@ -31,6 +31,50 @@ public class TestRelationReportEntry {
     private final Optional<String> then;
     private final List<TestRelationContextReportEntry> context;
 
+    public TestRelationReportEntry(
+        String id,
+        String repoName,
+        TestRelation.Type relationType,
+        ResolvedTestRelation.ResolutionStatus resolutionStatus,
+        GWTTestRelation.ResolutionStatus gwtResolutionStatus,
+        String testMethodPackageName,
+        String testMethodClassName,
+        String testMethodName,
+        String testMethodSignature,
+        String testMethodTokenRange,
+        Path testPath,
+        Optional<String> relatedMethodPackageName,
+        Optional<String> relatedMethodClassName,
+        Optional<String> relatedMethodName,
+        Optional<String> relatedMethodSignature,
+        Optional<String> relatedMethodTokenRange,
+        Optional<Path> relatedMethodPath,
+        Optional<String> given,
+        Optional<String> then,
+        List<TestRelationContextReportEntry> context
+    ) {
+        this.id = id;
+        this.repoName = repoName;
+        this.relationType = relationType;
+        this.resolutionStatus = resolutionStatus;
+        this.gwtResolutionStatus = gwtResolutionStatus;
+        this.testMethodPackageName = testMethodPackageName;
+        this.testMethodClassName = testMethodClassName;
+        this.testMethodName = testMethodName;
+        this.testMethodSignature = testMethodSignature;
+        this.testMethodTokenRange = testMethodTokenRange;
+        this.testPath = testPath;
+        this.relatedMethodPackageName = relatedMethodPackageName;
+        this.relatedMethodClassName = relatedMethodClassName;
+        this.relatedMethodName = relatedMethodName;
+        this.relatedMethodSignature = relatedMethodSignature;
+        this.relatedMethodTokenRange = relatedMethodTokenRange;
+        this.relatedMethodPath = relatedMethodPath;
+        this.given = given;
+        this.then = then;
+        this.context = context;
+    }
+
     TestRelationReportEntry(
         String repoName,
         TestRelation.Type relationType,
@@ -52,26 +96,28 @@ public class TestRelationReportEntry {
         Optional<String> then,
         List<TestRelationContextReportEntry> context
     ) {
-        this.id = UUID.randomUUID().toString();
-        this.repoName = repoName;
-        this.relationType = relationType;
-        this.resolutionStatus = resolutionStatus;
-        this.gwtResolutionStatus = gwtResolutionStatus;
-        this.testMethodPackageName = testMethodPackageName;
-        this.testMethodClassName = testMethodClassName;
-        this.testMethodName = testMethodName;
-        this.testMethodSignature = testMethodSignature;
-        this.testMethodTokenRange = testMethodTokenRange;
-        this.testPath = testPath;
-        this.relatedMethodPackageName = relatedMethodPackageName;
-        this.relatedMethodClassName = relatedMethodClassName;
-        this.relatedMethodName = relatedMethodName;
-        this.relatedMethodSignature = relatedMethodSignature;
-        this.relatedMethodTokenRange = relatedMethodTokenRange;
-        this.relatedMethodPath = relatedMethodPath;
-        this.given = given;
-        this.then = then;
-        this.context = context;
+        this(
+            UUID.randomUUID().toString(),
+            repoName,
+            relationType,
+            resolutionStatus,
+            gwtResolutionStatus,
+            testMethodPackageName,
+            testMethodClassName,
+            testMethodName,
+            testMethodSignature,
+            testMethodTokenRange,
+            testPath,
+            relatedMethodPackageName,
+            relatedMethodClassName,
+            relatedMethodName,
+            relatedMethodSignature,
+            relatedMethodTokenRange,
+            relatedMethodPath,
+            given,
+            then,
+            context
+        );
     }
 
     public String getId() {
