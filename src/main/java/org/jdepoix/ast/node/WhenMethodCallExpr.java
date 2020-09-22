@@ -26,4 +26,13 @@ public class WhenMethodCallExpr extends MethodCallExpr implements CustomNode {
     public NodeMetaModel getCustomMetaModel() {
         return this.metaModel;
     }
+
+    public static WhenMethodCallExpr fromMethodCallExpr(MethodCallExpr methodCall) {
+        return new WhenMethodCallExpr(
+            methodCall.getScope().orElse(null),
+            methodCall.getTypeArguments().orElse(null),
+            methodCall.getName(),
+            methodCall.getArguments()
+        );
+    }
 }

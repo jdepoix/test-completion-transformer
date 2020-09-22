@@ -20,6 +20,7 @@ public class AST {
     public static AST serialize(Node rootNode) throws NoSuchFieldException, IllegalAccessException {
         return new AST(
             new TypeNode(
+                // TODO use getCustomMetaModel
                 rootNode.getMetaModel().getType().getName(),
                 ASTNode.serialize(rootNode)
             )

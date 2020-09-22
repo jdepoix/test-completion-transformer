@@ -186,11 +186,11 @@ public class GWTSectionResolver {
             );
     }
 
-    private List<Statement> getSetupCode(MethodDeclaration testMethod) {
+    public static List<Statement> getSetupCode(MethodDeclaration testMethod) {
         List<Statement> beforeClass = new ArrayList<>();
         List<Statement> beforeEach = new ArrayList<>();
 
-        for (AnnotationExpr annotation : this.findParentClass(testMethod).findAll(AnnotationExpr.class)) {
+        for (AnnotationExpr annotation : findParentClass(testMethod).findAll(AnnotationExpr.class)) {
             final String annotationName = annotation.getNameAsString();
             if (JUNIT_BEFORE_CLASS_ANNOTATIONS.contains(annotationName)) {
                 beforeClass
@@ -204,11 +204,11 @@ public class GWTSectionResolver {
         return Stream.concat(beforeClass.stream(), beforeEach.stream()).collect(Collectors.toList());
     }
 
-    private ClassOrInterfaceDeclaration findParentClass(Node node) {
+    private static ClassOrInterfaceDeclaration findParentClass(Node node) {
         final Node parentNode = node.getParentNode().get();
         if (parentNode instanceof ClassOrInterfaceDeclaration) {
             return (ClassOrInterfaceDeclaration) parentNode;
         }
-        return this.findParentClass(parentNode);
+        return findParentClass(parentNode);
     }
 }

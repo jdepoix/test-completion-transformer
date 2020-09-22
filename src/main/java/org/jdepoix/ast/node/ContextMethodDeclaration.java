@@ -49,4 +49,18 @@ public class ContextMethodDeclaration extends MethodDeclaration implements Custo
     public NodeMetaModel getCustomMetaModel() {
         return this.metaModel;
     }
+
+    public static ContextMethodDeclaration fromMethodDeclaration(MethodDeclaration declaration) {
+        return new ContextMethodDeclaration(
+            declaration.getModifiers(),
+            declaration.getAnnotations(),
+            declaration.getTypeParameters(),
+            declaration.getType(),
+            declaration.getName(),
+            declaration.getParameters(),
+            declaration.getThrownExceptions(),
+            declaration.getBody().orElse(null),
+            declaration.getReceiverParameter().orElse(null)
+        );
+    }
 }

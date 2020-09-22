@@ -26,4 +26,13 @@ public class ContextMethodCallExpr extends MethodCallExpr implements CustomNode 
     public NodeMetaModel getCustomMetaModel() {
         return this.metaModel;
     }
+
+    public static ContextMethodCallExpr fromMethodCallExpr(MethodCallExpr methodCall) {
+        return new ContextMethodCallExpr(
+            methodCall.getScope().orElse(null),
+            methodCall.getTypeArguments().orElse(null),
+            methodCall.getName(),
+            methodCall.getArguments()
+        );
+    }
 }

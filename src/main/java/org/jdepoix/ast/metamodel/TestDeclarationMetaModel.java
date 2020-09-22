@@ -1,15 +1,12 @@
 package org.jdepoix.ast.metamodel;
 
 import com.github.javaparser.ast.expr.SimpleName;
-import com.github.javaparser.metamodel.BaseNodeMetaModel;
-import com.github.javaparser.metamodel.JavaParserMetaModel;
-import com.github.javaparser.metamodel.PropertyMetaModel;
-import com.github.javaparser.metamodel.StatementMetaModel;
+import com.github.javaparser.metamodel.*;
 import org.jdepoix.ast.node.*;
 
 import java.util.Optional;
 
-public class TestDeclarationMetaModel extends StatementMetaModel {
+public class TestDeclarationMetaModel extends NodeMetaModel {
     public PropertyMetaModel testBodyPropertyMetaModel;
     public PropertyMetaModel testContextMethodDeclarationsPropertyMetaModel;
     public PropertyMetaModel whenMethodDeclarationPropertyMetaModel;

@@ -49,4 +49,18 @@ public class TestContextMethodDeclaration extends MethodDeclaration implements C
     public NodeMetaModel getCustomMetaModel() {
         return this.metaModel;
     }
+
+    public static TestContextMethodDeclaration fromMethodDeclaration(MethodDeclaration declaration) {
+        return new TestContextMethodDeclaration(
+            declaration.getModifiers(),
+            declaration.getAnnotations(),
+            declaration.getTypeParameters(),
+            declaration.getType(),
+            declaration.getName(),
+            declaration.getParameters(),
+            declaration.getThrownExceptions(),
+            declaration.getBody().orElse(null),
+            declaration.getReceiverParameter().orElse(null)
+        );
+    }
 }

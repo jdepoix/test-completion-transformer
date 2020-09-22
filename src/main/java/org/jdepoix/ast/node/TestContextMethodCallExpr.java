@@ -27,4 +27,13 @@ public class TestContextMethodCallExpr extends MethodCallExpr implements CustomN
     public NodeMetaModel getCustomMetaModel() {
         return this.metaModel;
     }
+
+    public static TestContextMethodCallExpr fromMethodCallExpr(MethodCallExpr methodCall) {
+        return new TestContextMethodCallExpr(
+            methodCall.getScope().orElse(null),
+            methodCall.getTypeArguments().orElse(null),
+            methodCall.getName(),
+            methodCall.getArguments()
+        );
+    }
 }

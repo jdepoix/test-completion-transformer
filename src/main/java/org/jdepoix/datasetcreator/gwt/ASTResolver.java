@@ -2,19 +2,26 @@ package org.jdepoix.datasetcreator.gwt;
 
 import com.github.javaparser.StaticJavaParser;
 import com.github.javaparser.ast.CompilationUnit;
+import com.github.javaparser.ast.Node;
+import com.github.javaparser.ast.NodeList;
 import com.github.javaparser.ast.body.ClassOrInterfaceDeclaration;
 import com.github.javaparser.ast.body.MethodDeclaration;
 import com.github.javaparser.ast.expr.MethodCallExpr;
+import com.github.javaparser.ast.stmt.Statement;
+import com.github.javaparser.resolution.declarations.ResolvedMethodDeclaration;
 import com.github.javaparser.symbolsolver.JavaSymbolSolver;
 import com.github.javaparser.symbolsolver.resolution.typesolvers.CombinedTypeSolver;
-import org.jdepoix.ast.node.WhenMethodCallExpr;
+import com.github.javaparser.symbolsolver.resolution.typesolvers.ReflectionTypeSolver;
+import org.jdepoix.ast.node.*;
 import org.jdepoix.ast.serialization.AST;
 import org.jdepoix.config.ResultDirConfig;
+import org.jdepoix.testrelationfinder.gwt.GWTSectionResolver;
 import org.jdepoix.testrelationfinder.reporting.TestRelationReportEntry;
 
 import java.io.IOException;
-import java.util.HashSet;
-import java.util.Set;
+import java.util.*;
+import java.util.function.Function;
+import java.util.stream.Collectors;
 
 public class ASTResolver {
     public class CantResolve extends Exception {
@@ -27,44 +34,39 @@ public class ASTResolver {
 
     public ASTResolver(ResultDirConfig config) {
         this.config = config;
-        StaticJavaParser.getConfiguration().setSymbolResolver(new JavaSymbolSolver(new CombinedTypeSolver()));
+        final CombinedTypeSolver typeSolver = new CombinedTypeSolver();
+        typeSolver.add(new ReflectionTypeSolver());
+        StaticJavaParser.getConfiguration().setSymbolResolver(new JavaSymbolSolver(typeSolver));
     }
 
-    // TODO resolve when definition
-    // TODO make sure to avoid circular graph when resolving method declarations
-    // TODO recursively travers when method and resolve subcalls into ContextMethodDeclarations and substitute with ContextMethodCallExpr/WhenMethodCallExpr
-    // TODO safe ThenSection start index in GWTResolver
-    // TODO substitute then with ThenSection node
     // TODO build return type
-    // TODO load setup
     // TODO safe prediction target
     public ResolvedAST resolve(TestRelationReportEntry entry) throws IOException, CantResolve {
-        final MethodDeclaration testMethod = findMethodDeclarationBySignature(
-            StaticJavaParser.parse(config.resolveRepoFile(entry.getRepoName(), entry.getTestPath())),
-            entry.getTestMethodClassName(), entry.getTestMethodSignature()
+        final MethodDeclaration testMethod = parseTestMethod(entry);
+        final MethodDeclaration relatedMethod = parseRelatedMethod(entry);
+
+        final NodeList<Statement> thenSection = substituteGWTNodesInTestMethod(testMethod, entry);
+
+        final String relatedMethodSignature = relatedMethod.resolve().getQualifiedSignature();
+        final List<MethodDeclaration> testContextDeclarations = substituteTestMethodContext(
+            testMethod,
+            relatedMethodSignature
         );
 
-        testMethod.findAll(
-            MethodCallExpr.class,
-            methodCallExpr -> methodCallExpr.getNameAsString().equals(entry.getRelatedMethodName().get())
-        ).forEach(methodCallExpr -> methodCallExpr.replace(
-            new WhenMethodCallExpr(
-                methodCallExpr.getScope().orElse(null),
-                methodCallExpr.getTypeArguments().orElse(null),
-                methodCallExpr.getName(),
-                methodCallExpr.getArguments()
-            )
-        ));
-
-        final MethodDeclaration relatedMethod = findMethodDeclarationBySignature(
-            StaticJavaParser.parse(config.resolveRepoFile(entry.getRepoName(), entry.getRelatedMethodPath().get())),
-            entry.getRelatedMethodClassName().get(), entry.getRelatedMethodSignature().get()
+        final List<MethodDeclaration> contextDeclarations = substituteRelatedMethodContext(
+            relatedMethod,
+            relatedMethodSignature
         );
-        this.resolveMethodCallExpressions(relatedMethod, new HashSet<>());
 
+        final TestDeclaration testDeclaration = buildTestDeclaration(
+            testMethod,
+            relatedMethod,
+            testContextDeclarations,
+            contextDeclarations
+        );
 
         try {
-            final AST ast = AST.serialize(relatedMethod);
+            final AST ast = AST.serialize(testDeclaration);
             System.out.println(ast.printTree());
         } catch (Exception e) {
             e.printStackTrace();
@@ -74,31 +76,120 @@ public class ASTResolver {
         return null;
     }
 
-    private void resolveMethodCallExpressions(MethodDeclaration method, Set<String> visitedMethods) {
-        // TODO
-        final String methodDeclaration = method.getDeclarationAsString();
-        if (visitedMethods.contains(methodDeclaration)) {
-            return;
-        }
-        visitedMethods.add(methodDeclaration);
+    private TestDeclaration buildTestDeclaration(
+        MethodDeclaration testMethod,
+        MethodDeclaration relatedMethod,
+        List<MethodDeclaration> testContextDeclarations,
+        List<MethodDeclaration> contextDeclarations
+    ) {
+        return new TestDeclaration(
+            new TestBody(testMethod.getBody().get().getStatements()),
+            new NodeList<>(
+                testContextDeclarations.stream()
+                    .map(TestContextMethodDeclaration::fromMethodDeclaration)
+                    .collect(Collectors.toList())
+            ),
+            WhenMethodDeclaration.fromMethodDeclaration(relatedMethod),
+            new NodeList<>(
+                contextDeclarations.stream()
+                    .map(ContextMethodDeclaration::fromMethodDeclaration)
+                    .collect(Collectors.toList())
+            ),
+            testMethod.getName()
+        );
+    }
 
+    private List<MethodDeclaration> substituteRelatedMethodContext(
+        MethodDeclaration relatedMethod, String relatedMethodSignature
+    ) {
+        final List<MethodDeclaration> contextDeclarations = new ArrayList<>();
+        this.substituteMethodCallExpressions(
+            relatedMethod,
+            contextDeclarations,
+            ContextMethodCallExpr::fromMethodCallExpr,
+            relatedMethodSignature
+        );
+        return contextDeclarations;
+    }
+
+    private List<MethodDeclaration> substituteTestMethodContext(
+        MethodDeclaration testMethod, String relatedMethodSignature
+    ) {
+        final List<MethodDeclaration> testContextDeclarations = new ArrayList<>();
+        this.substituteMethodCallExpressions(
+            testMethod,
+            testContextDeclarations,
+            TestContextMethodCallExpr::fromMethodCallExpr,
+            relatedMethodSignature
+        );
+        return testContextDeclarations;
+    }
+
+    private NodeList<Statement> substituteGWTNodesInTestMethod(
+        MethodDeclaration testMethod, TestRelationReportEntry entry
+    ) {
+        testMethod.findAll(
+            MethodCallExpr.class,
+            methodCallExpr -> methodCallExpr.getNameAsString().equals(entry.getRelatedMethodName().get())
+        ).forEach(methodCallExpr -> methodCallExpr.replace(WhenMethodCallExpr.fromMethodCallExpr(methodCallExpr)));
+
+        final NodeList<Statement> thenSection = this.substituteThenSection(
+            testMethod.getBody().get().getStatements(), entry.getThenSectionStartIndex().get()
+        );
+        testMethod.getBody().get().getStatements().addAll(0, GWTSectionResolver.getSetupCode(testMethod));
+        return thenSection;
+    }
+
+    private MethodDeclaration parseRelatedMethod(TestRelationReportEntry entry) throws CantResolve, IOException {
+        return findMethodDeclarationBySignature(
+            StaticJavaParser.parse(config.resolveRepoFile(entry.getRepoName(), entry.getRelatedMethodPath().get())),
+            entry.getRelatedMethodClassName().get(), entry.getRelatedMethodSignature().get()
+        );
+    }
+
+    private MethodDeclaration parseTestMethod(TestRelationReportEntry entry) throws CantResolve, IOException {
+        return findMethodDeclarationBySignature(
+            StaticJavaParser.parse(config.resolveRepoFile(entry.getRepoName(), entry.getTestPath())),
+            entry.getTestMethodClassName(), entry.getTestMethodSignature()
+        );
+    }
+
+    private NodeList<Statement> substituteThenSection(NodeList<Statement> statements, int thenSectionStartIndex) {
+        List<Statement> thenStatements = new ArrayList<>();
+        while (statements.size() > thenSectionStartIndex) {
+            thenStatements.add(statements.remove(thenSectionStartIndex));
+        }
+
+        statements.add(new ThenSection());
+
+        return new NodeList<>(thenStatements);
+    }
+
+    private void substituteMethodCallExpressions(
+        MethodDeclaration method,
+        List<MethodDeclaration> substitutedMethods,
+        Function<MethodCallExpr, Node> substituteGenerator,
+        String relatedMethodSignature
+    ) {
         method.findAll(MethodCallExpr.class).forEach(methodCallExpr -> {
-            MethodDeclaration declaration = null;
+            ResolvedMethodDeclaration resolvedMethod = null;
+            MethodDeclaration methodDeclaration = null;
             try {
-                declaration = methodCallExpr.resolve().toAst().get();
+                resolvedMethod = methodCallExpr.resolve();
+                methodDeclaration = resolvedMethod.toAst().orElse(null);
             } catch (Exception e) {}
-            if (declaration != null) {
-                resolveMethodCallExpressions(declaration, visitedMethods);
-                // TODO replace with call expr
-//                methodCallExpr.replace(
-//                    new DeclaredMethodCallExpr(
-//                        declaration,
-//                        methodCallExpr.getScope().orElse(null),
-//                        methodCallExpr.getTypeArguments().orElse(null),
-//                        methodCallExpr.getName(),
-//                        methodCallExpr.getArguments()
-//                    )
-//                );
+            if (resolvedMethod != null && methodDeclaration != null) {
+                if (resolvedMethod.getQualifiedSignature().equals(relatedMethodSignature)) {
+                    methodCallExpr.replace(WhenMethodCallExpr.fromMethodCallExpr(methodCallExpr));
+                } else {
+                    if (!substitutedMethods.contains(methodDeclaration)) {
+                        substitutedMethods.add(methodDeclaration);
+                        substituteMethodCallExpressions(
+                            methodDeclaration, substitutedMethods, substituteGenerator, relatedMethodSignature
+                        );
+                    }
+                    methodCallExpr.replace(substituteGenerator.apply(methodCallExpr));
+                }
             }
         });
     }
