@@ -17,7 +17,9 @@ CREATE TABLE IF NOT EXISTS test_relations (
     related_method_token_range TEXT,
     related_file_path TEXT,
     given_section TEXT,
-    then_section TEXT
+    then_section TEXT,
+    when_location TEXT,
+    then_section_start_index TEXT
 );
 
 CREATE TABLE IF NOT EXISTS test_context (

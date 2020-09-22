@@ -60,6 +60,8 @@ public class ReportCreator {
             ),
             gwtTestRelation.getGiven(),
             gwtTestRelation.getThen(),
+            gwtTestRelation.getWhenLocation(),
+            gwtTestRelation.getThenSectionStartIndex(),
             resolvedGWTTestRelation
                 .getContext()
                 .stream()

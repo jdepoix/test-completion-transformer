@@ -49,6 +49,8 @@ public class ReportRetriever {
                     Optional.ofNullable(Path.of(resultSet.getString("related_file_path"))),
                     Optional.ofNullable(resultSet.getString("given_section")),
                     Optional.ofNullable(resultSet.getString("then_section")),
+                    Optional.ofNullable(GWTTestRelation.WhenLocation.valueOf(resultSet.getString("when_location"))),
+                    Optional.ofNullable(Integer.parseInt(resultSet.getString("then_section_start_index"))),
                     List.of()
                 ));
             }

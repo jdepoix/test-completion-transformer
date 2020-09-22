@@ -1,6 +1,7 @@
 package org.jdepoix.testrelationfinder.gwt;
 
 import com.github.javaparser.ast.Node;
+import com.github.javaparser.ast.NodeList;
 import com.github.javaparser.ast.body.ClassOrInterfaceDeclaration;
 import com.github.javaparser.ast.body.MethodDeclaration;
 import com.github.javaparser.ast.expr.AnnotationExpr;
@@ -66,9 +67,11 @@ public class GWTSectionResolver {
             .flatMap(statement -> statement.findAll(MethodCallExpr.class).stream())
             .collect(Collectors.toList());
         List<Statement> cachedStatements = new ArrayList<>();
+        Integer thenSectionStartIndex = null;
 
-        // TODO save index where then starts in getStatements list
-        for (Statement statement : testMethod.getBody().get().getStatements()) {
+        final NodeList<Statement> statements = testMethod.getBody().get().getStatements();
+        for (int i = 0; i < statements.size(); i++) {
+            Statement statement = statements.get(i);
             boolean isAssertionStatement = false;
             boolean statementContainsWhenCall = false;
             for (MethodCallExpr methodCall : statement.findAll(MethodCallExpr.class)) {
@@ -111,6 +114,9 @@ public class GWTSectionResolver {
             if (statementContainsWhenCall) {
                 given.addAll(cachedStatements);
                 if (isAssertionStatement) {
+                    if (thenSectionStartIndex == null) {
+                        thenSectionStartIndex = i;
+                    }
                     then.add(statement);
                 } else {
                     given.add(statement);
@@ -119,6 +125,9 @@ public class GWTSectionResolver {
                 cachedStatements.clear();
                 whenFound = true;
             } else if (isAssertionStatement && whenFound) {
+                if (thenSectionStartIndex == null) {
+                    thenSectionStartIndex = i;
+                }
                 then.addAll(cachedStatements);
                 then.add(statement);
             } else {
@@ -138,8 +147,43 @@ public class GWTSectionResolver {
             resolvedTestRelation,
             given.stream().map(Statement::toString).collect(Collectors.joining("\n")),
             then.stream().map(Statement::toString).collect(Collectors.joining("\n")),
+            this.findWhenLocation(statements, thenSectionStartIndex, relatedMethodName),
+            thenSectionStartIndex,
             context
         );
+    }
+
+    private GWTTestRelation.WhenLocation findWhenLocation(
+        List<Statement> statements, int thenSectionStartIndex, String relatedMethodName
+    ) {
+        final boolean inThen = this.doStatementsContainRelatedMethodCall(
+            statements.subList(0, thenSectionStartIndex), relatedMethodName
+        );
+        final boolean inGiven = this.doStatementsContainRelatedMethodCall(
+            statements.subList(thenSectionStartIndex, statements.size()), relatedMethodName
+        );
+
+        if (inGiven && inGiven) {
+            return GWTTestRelation.WhenLocation.BOTH;
+        } else if (inGiven) {
+            return GWTTestRelation.WhenLocation.GIVEN;
+        } else if (inThen)  {
+            return GWTTestRelation.WhenLocation.THEN;
+        }
+
+        throw new IllegalStateException("this method should only be used for methods which contain When calls");
+    }
+
+    private boolean doStatementsContainRelatedMethodCall(List<Statement> statements, String relatedMethodName) {
+        return statements
+            .stream()
+            .anyMatch(statement ->
+                statement
+                    .findFirst(
+                        MethodCallExpr.class,
+                        methodCallExpr -> methodCallExpr.getNameAsString().equals(relatedMethodName)
+                    ).isPresent()
+            );
     }
 
     private List<Statement> getSetupCode(MethodDeclaration testMethod) {

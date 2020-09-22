@@ -15,7 +15,7 @@ import java.util.stream.Collectors;
 public class SQLiteReportStore {
     private static final String INSERT_TEST_RELATION_SQL =
         "INSERT INTO test_relations " +
-        "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);";
+        "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);";
     private static final String INSERT_TEST_CONTEXT_SQL =
         "INSERT INTO test_context VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?);";
     private static final int BATCH_SIZE = 1000;
@@ -81,7 +81,9 @@ public class SQLiteReportStore {
                         data.getRelatedMethodTokenRange().orElse(null),
                         data.getRelatedMethodPath().map(Path::toString).orElse(null),
                         data.getGiven().orElse(null),
-                        data.getThen().orElse(null)
+                        data.getThen().orElse(null),
+                        data.getWhenLocation().map(Enum::toString).orElse(null),
+                        data.getThenSectionStartIndex().map(integer -> Integer.toString(integer)).orElse(null)
                     )
             );
         } finally {

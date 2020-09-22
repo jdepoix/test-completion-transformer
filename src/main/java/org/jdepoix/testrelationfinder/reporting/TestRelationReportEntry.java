@@ -29,6 +29,8 @@ public class TestRelationReportEntry {
     private final Optional<Path> relatedMethodPath;
     private final Optional<String> given;
     private final Optional<String> then;
+    private final Optional<GWTTestRelation.WhenLocation> whenLocation;
+    private final Optional<Integer> thenSectionStartIndex;
     private final List<TestRelationContextReportEntry> context;
 
     public TestRelationReportEntry(
@@ -51,6 +53,8 @@ public class TestRelationReportEntry {
         Optional<Path> relatedMethodPath,
         Optional<String> given,
         Optional<String> then,
+        Optional<GWTTestRelation.WhenLocation> whenLocation,
+        Optional<Integer> thenSectionStartIndex,
         List<TestRelationContextReportEntry> context
     ) {
         this.id = id;
@@ -72,6 +76,8 @@ public class TestRelationReportEntry {
         this.relatedMethodPath = relatedMethodPath;
         this.given = given;
         this.then = then;
+        this.whenLocation = whenLocation;
+        this.thenSectionStartIndex = thenSectionStartIndex;
         this.context = context;
     }
 
@@ -94,6 +100,8 @@ public class TestRelationReportEntry {
         Optional<Path> relatedMethodPath,
         Optional<String> given,
         Optional<String> then,
+        Optional<GWTTestRelation.WhenLocation> whenLocation,
+        Optional<Integer> thenSectionStartIndex,
         List<TestRelationContextReportEntry> context
     ) {
         this(
@@ -116,6 +124,8 @@ public class TestRelationReportEntry {
             relatedMethodPath,
             given,
             then,
+            whenLocation,
+            thenSectionStartIndex,
             context
         );
     }
@@ -198,5 +208,13 @@ public class TestRelationReportEntry {
 
     public Optional<String> getRelatedMethodTokenRange() {
         return relatedMethodTokenRange;
+    }
+
+    public Optional<GWTTestRelation.WhenLocation> getWhenLocation() {
+        return whenLocation;
+    }
+
+    public Optional<Integer> getThenSectionStartIndex() {
+        return thenSectionStartIndex;
     }
 }

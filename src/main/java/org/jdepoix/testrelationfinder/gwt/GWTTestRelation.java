@@ -16,22 +16,34 @@ public class GWTTestRelation {
         VIOLATES_SAP
     }
 
+    public enum WhenLocation {
+        GIVEN,
+        THEN,
+        BOTH
+    }
+
     private final ResolvedTestRelation resolvedTestRelation;
     private final ResolutionStatus resolutionStatus;
     private final Optional<String> given;
     private final Optional<String> then;
+    private final Optional<WhenLocation> whenLocation;
+    private final Optional<Integer> thenSectionStartIndex;
     private final Optional<List<MethodCallExpr>> context;
 
     GWTTestRelation(
         ResolvedTestRelation resolvedTestRelation,
         String given,
         String then,
+        WhenLocation whenLocation,
+        int thenSectionStartIndex,
         List<MethodCallExpr> context
     ) {
         this.resolvedTestRelation = resolvedTestRelation;
         this.resolutionStatus = ResolutionStatus.RESOLVED;
         this.given = Optional.of(given);
         this.then = Optional.of(then);
+        this.whenLocation = Optional.of(whenLocation);
+        this.thenSectionStartIndex = Optional.of(thenSectionStartIndex);
         this.context = Optional.of(context);
     }
 
@@ -41,6 +53,8 @@ public class GWTTestRelation {
         this.given = Optional.empty();
         this.then = Optional.empty();
         this.context = Optional.empty();
+        this.whenLocation = Optional.empty();
+        this.thenSectionStartIndex = Optional.empty();
     }
 
     public ResolvedTestRelation getResolvedTestRelation() {
@@ -59,7 +73,17 @@ public class GWTTestRelation {
         return then;
     }
 
+    public Optional<WhenLocation> getWhenLocation() {
+        return whenLocation;
+    }
+
+    public Optional<Integer> getThenSectionStartIndex() {
+        return thenSectionStartIndex;
+    }
+
     Optional<List<MethodCallExpr>> getContext() {
         return context;
     }
+
+
 }
