@@ -32,11 +32,12 @@ public class ASTResolver {
 
     // TODO resolve when definition
     // TODO make sure to avoid circular graph when resolving method declarations
-    // TODO create TestDeclaration custom node
     // TODO recursively travers when method and resolve subcalls into ContextMethodDeclarations and substitute with ContextMethodCallExpr/WhenMethodCallExpr
     // TODO safe ThenSection start index in GWTResolver
     // TODO substitute then with ThenSection node
     // TODO build return type
+    // TODO load setup
+    // TODO safe prediction target
     public ResolvedAST resolve(TestRelationReportEntry entry) throws IOException, CantResolve {
         final MethodDeclaration testMethod = findMethodDeclarationBySignature(
             StaticJavaParser.parse(config.resolveRepoFile(entry.getRepoName(), entry.getTestPath())),

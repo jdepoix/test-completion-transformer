@@ -6,7 +6,6 @@ import org.jdepoix.ast.node.ThenSection;
 import java.util.Optional;
 
 public class ThenSectionMetaModel extends StatementMetaModel {
-
     ThenSectionMetaModel(Optional<BaseNodeMetaModel> superBaseNodeMetaModel) {
         super(superBaseNodeMetaModel, ThenSection.class, "ThenSection", "org.jdepoix.ast.node", false, false);
     }
