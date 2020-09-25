@@ -1,28 +1,45 @@
 package org.jdepoix.testrelationfinder.relation;
 
-import java.util.Arrays;
-import java.util.regex.Pattern;
+import java.util.ArrayList;
+import java.util.List;
 
 class TestEntityNameTokenizer {
-    private static final Pattern MATCH_LOWERCASE = Pattern.compile("[^A-Z]+");
-    private static final Pattern MATCH_SURROUNDED_UNDERSCORES = Pattern.compile(".+_.+");
-
     String[] tokenize(String name) {
-        return Arrays
-            .stream(this.splitMethodName(name))
+        return this.splitMethodName(name)
+            .stream()
             .map(String::toLowerCase)
             .filter(s -> !(s.equals("") || s.equals("test")))
             .toArray(String[]::new);
     }
 
-    private String[] splitMethodName(String name) {
-        if (name.length() == 0) {
-            return new String[]{};
+    private List<String> splitMethodName(String name) {
+        final ArrayList<String> splittedNames = new ArrayList<>();
+        String currentName = "";
+
+        for (char currentChar : name.toCharArray()) {
+            if (currentChar == '_') {
+                if (currentName.length() > 0) {
+                    splittedNames.add(currentName);
+                    currentName = "";
+                }
+                continue;
+            }
+
+            if (
+                Character.isUpperCase(currentChar)
+                && currentName.length() > 0
+                && Character.isLowerCase(currentName.charAt(currentName.length() - 1))
+            ) {
+                splittedNames.add(currentName);
+                currentName = "";
+            }
+
+            currentName += currentChar;
+        }
+        if (currentName.length() > 0) {
+            splittedNames.add(currentName);
         }
 
-        if (MATCH_LOWERCASE.matcher(name).matches() && MATCH_SURROUNDED_UNDERSCORES.matcher(name).matches()) {
-            return name.split("_");
-        }
-        return name.split("(?=\\p{Lu})");
+        return splittedNames;
     }
 }
