@@ -79,6 +79,8 @@ public class Finder {
             }
         } else if (rankingResults.size() >= 2 && rankingResults.get(0).getScore() == rankingResults.get(1).getScore()) {
             newType = TestRelation.Type.AMBIGUOUS_RELATIONS;
+        } else if (rankingResults.get(0).getEntity().isAbstract()) {
+            newType = TestRelation.Type.NO_IMPLEMENTATION_FOUND;
         }
 
         if (newType == null) {

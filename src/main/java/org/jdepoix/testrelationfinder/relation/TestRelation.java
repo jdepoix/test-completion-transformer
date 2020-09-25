@@ -37,9 +37,10 @@ public class TestRelation {
     }
 
     public enum Type {
-        NO_RELATION_FOUND,
         MAPPED_BY_TEST_METHOD_NAME,
         MAPPED_BY_TEST_CLASS_NAME,
+        NO_RELATION_FOUND,
+        NO_IMPLEMENTATION_FOUND,
         AMBIGUOUS_RELATIONS
     }
 
