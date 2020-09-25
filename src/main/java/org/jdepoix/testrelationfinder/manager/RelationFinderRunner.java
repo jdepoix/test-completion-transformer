@@ -61,7 +61,7 @@ public class RelationFinderRunner {
 
     private void runRelationDetection(String repoName, Path path) throws Exception {
         final List<TestRelationReportEntry> resolvedTestRelations = this.relationFinder
-            .findTestRelations(this.testExtractor.extractTestMethods(path))
+            .findTestRelations(this.testExtractor.extractTestMethods(path), path)
             .map(this.gwtSectionResolver::resolve)
             .map(this.gwtContextResolver::resolve)
             .map(testRelation -> this.reportCreator.createReportEntry(repoName, path, testRelation))

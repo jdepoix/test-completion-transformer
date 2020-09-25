@@ -4,8 +4,10 @@ import com.github.javaparser.ast.body.MethodDeclaration;
 import com.github.javaparser.ast.expr.MethodCallExpr;
 import com.github.javaparser.resolution.declarations.ResolvedMethodDeclaration;
 import com.github.javaparser.symbolsolver.reflectionmodel.ReflectionMethodDeclaration;
+import com.google.common.collect.Streams;
 import org.jetbrains.annotations.NotNull;
 
+import java.nio.file.Path;
 import java.util.*;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -19,24 +21,30 @@ public class Finder {
         this.tokenizer = new TestEntityNameTokenizer();
     }
 
-    public Stream<TestRelation> findTestRelations(Stream<MethodDeclaration> testMethods) {
-        return testMethods.map(this::findTestRelation);
+    public Stream<TestRelation> findTestRelations(Stream<MethodDeclaration> testMethods, Path projectRootPath) {
+        return testMethods.map(testMethod -> findTestRelation(testMethod, projectRootPath));
     }
 
-    private TestRelation findTestRelation(MethodDeclaration testMethod) {
+    private TestRelation findTestRelation(MethodDeclaration testMethod, Path projectRootPath) {
         final List<MethodCallExpr> methodCalls = this.getDistinctMethodCalls(testMethod.findAll(MethodCallExpr.class));
         final TestRelation.Builder testRelationBuilder = new TestRelation.Builder().setTestMethod(testMethod);
 
         final ResolvedMethodDeclaration resolvedTestMethod = testMethod.resolve();
         this.findHighestRankingMethods(
-            testRelationBuilder, methodCalls, testMethod.getNameAsString(), resolvedTestMethod.getPackageName()
+            testRelationBuilder,
+            methodCalls,
+            testMethod.getNameAsString(),
+            projectRootPath
         );
         if (testRelationBuilder.getType().isEmpty()) {
             return testRelationBuilder.setType(TestRelation.Type.MAPPED_BY_TEST_METHOD_NAME).build();
         }
 
         this.findHighestRankingMethods(
-            testRelationBuilder, methodCalls, resolvedTestMethod.getClassName(), resolvedTestMethod.getPackageName()
+            testRelationBuilder,
+            methodCalls,
+            resolvedTestMethod.getClassName(),
+            projectRootPath
         );
         if (testRelationBuilder.getType().isEmpty()) {
             testRelationBuilder.setType(TestRelation.Type.MAPPED_BY_TEST_CLASS_NAME);
@@ -56,10 +64,10 @@ public class Finder {
         TestRelation.Builder testRelationBuilder,
         List<MethodCallExpr> methodCalls,
         String testEntityName,
-        String testPackage
+        Path projectRootPath
     ) {
         final List<RankingResult<ResolvedMethodDeclaration>> rankingResults = resolveRelevantRankingResults(
-            createRankingResults(methodCalls, testEntityName), testPackage
+            createRankingResults(methodCalls, testEntityName), projectRootPath
         );
         TestRelation.Type newType = null;
 
@@ -101,8 +109,9 @@ public class Finder {
     }
 
     private List<RankingResult<ResolvedMethodDeclaration>> resolveRelevantRankingResults(
-        List<RankingResult<MethodCallExpr>> rankingResults, String testPackage
+        List<RankingResult<MethodCallExpr>> rankingResults, Path projectRootPath
     ) {
+        final Path absoluteProjectRoot = projectRootPath.toAbsolutePath();
         List<RankingResult<ResolvedMethodDeclaration>> relevantRankingResults = new ArrayList<>();
 
         for (RankingResult<MethodCallExpr> rankingResult : rankingResults) {
@@ -114,7 +123,15 @@ public class Finder {
             if (
                 resolvedRelatedMethod != null
                 && !(resolvedRelatedMethod instanceof ReflectionMethodDeclaration)
-                && !resolvedRelatedMethod.getPackageName().equals(testPackage)
+                && !Streams.stream(
+                    absoluteProjectRoot.relativize(
+                        resolvedRelatedMethod
+                            .toAst().get()
+                            .findCompilationUnit().get()
+                            .getStorage().get()
+                            .getSourceRoot()
+                    ).iterator()
+                ).anyMatch(path -> path.toString().equals("test"))
             ) {
                 relevantRankingResults.add(new RankingResult<>(resolvedRelatedMethod, rankingResult.getScore()));
                 if (relevantRankingResults.size() >= 2) {

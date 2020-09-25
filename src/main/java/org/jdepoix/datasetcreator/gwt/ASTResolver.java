@@ -186,8 +186,8 @@ public class ASTResolver {
                 if (
                     String.format(
                         "%s.%s",
-                        resolvedMethod,
-                        methodDeclaration
+                        resolvedMethod.getQualifiedName(),
+                        methodDeclaration.getDeclarationAsString()
                     ).equals(relatedMethodSignature)
                 ) {
                     methodCallExpr.replace(WhenMethodCallExpr.fromMethodCallExpr(methodCallExpr));
