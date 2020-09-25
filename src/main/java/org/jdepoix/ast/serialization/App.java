@@ -322,7 +322,7 @@ class ValueNode extends ASTNode {
 
     @Override
     public String toString() {
-        return String.format("%s:%s", this.getType(), this.getValue());
+        return String.format("%s", this.getValue());
     }
 
     public String getValue() {

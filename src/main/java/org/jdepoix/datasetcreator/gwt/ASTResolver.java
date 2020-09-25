@@ -47,7 +47,11 @@ public class ASTResolver {
 
         final NodeList<Statement> thenSection = substituteGWTNodesInTestMethod(testMethod, entry);
 
-        final String relatedMethodSignature = relatedMethod.resolve().getQualifiedSignature();
+        final String relatedMethodSignature = String.format(
+            "%s.%s",
+            relatedMethod.resolve().getQualifiedName(),
+            relatedMethod.getDeclarationAsString()
+        );
         final List<MethodDeclaration> testContextDeclarations = substituteTestMethodContext(
             testMethod,
             relatedMethodSignature
@@ -67,7 +71,7 @@ public class ASTResolver {
 
         try {
             final AST ast = AST.serialize(testDeclaration);
-            System.out.println(ast.printTree());
+//            System.out.println(ast.printTree());
         } catch (Exception e) {
             e.printStackTrace();
         }
@@ -179,7 +183,13 @@ public class ASTResolver {
                 methodDeclaration = resolvedMethod.toAst().orElse(null);
             } catch (Exception e) {}
             if (resolvedMethod != null && methodDeclaration != null) {
-                if (resolvedMethod.getQualifiedSignature().equals(relatedMethodSignature)) {
+                if (
+                    String.format(
+                        "%s.%s",
+                        resolvedMethod,
+                        methodDeclaration
+                    ).equals(relatedMethodSignature)
+                ) {
                     methodCallExpr.replace(WhenMethodCallExpr.fromMethodCallExpr(methodCallExpr));
                 } else {
                     if (!substitutedMethods.contains(methodDeclaration)) {
