@@ -2,7 +2,6 @@ CREATE TABLE IF NOT EXISTS test_relations (
     id TEXT PRIMARY KEY,
     repo_name TEXT NOT NULL,
     relation_type TEXT NOT NULL,
-    resolution_status TEXT NOT NULL,
     gwt_resolution_status TEXT NOT NULL,
     test_package TEXT NOT NULL,
     test_class TEXT NOT NULL,

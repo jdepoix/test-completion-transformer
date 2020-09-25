@@ -1,7 +1,7 @@
 package org.jdepoix.testrelationfinder.gwt;
 
 import com.github.javaparser.ast.expr.MethodCallExpr;
-import org.jdepoix.testrelationfinder.relation.ResolvedTestRelation;
+import org.jdepoix.testrelationfinder.relation.TestRelation;
 
 import java.util.List;
 import java.util.Optional;
@@ -22,7 +22,7 @@ public class GWTTestRelation {
         BOTH
     }
 
-    private final ResolvedTestRelation resolvedTestRelation;
+    private final TestRelation testRelation;
     private final ResolutionStatus resolutionStatus;
     private final Optional<String> given;
     private final Optional<String> then;
@@ -31,14 +31,14 @@ public class GWTTestRelation {
     private final Optional<List<MethodCallExpr>> context;
 
     GWTTestRelation(
-        ResolvedTestRelation resolvedTestRelation,
+        TestRelation testRelation,
         String given,
         String then,
         WhenLocation whenLocation,
         int thenSectionStartIndex,
         List<MethodCallExpr> context
     ) {
-        this.resolvedTestRelation = resolvedTestRelation;
+        this.testRelation = testRelation;
         this.resolutionStatus = ResolutionStatus.RESOLVED;
         this.given = Optional.of(given);
         this.then = Optional.of(then);
@@ -47,8 +47,8 @@ public class GWTTestRelation {
         this.context = Optional.of(context);
     }
 
-    GWTTestRelation(ResolvedTestRelation resolvedTestRelation, ResolutionStatus resolutionStatus) {
-        this.resolvedTestRelation = resolvedTestRelation;
+    GWTTestRelation(TestRelation testRelation, ResolutionStatus resolutionStatus) {
+        this.testRelation = testRelation;
         this.resolutionStatus = resolutionStatus;
         this.given = Optional.empty();
         this.then = Optional.empty();
@@ -57,8 +57,8 @@ public class GWTTestRelation {
         this.thenSectionStartIndex = Optional.empty();
     }
 
-    public ResolvedTestRelation getResolvedTestRelation() {
-        return resolvedTestRelation;
+    public TestRelation getTestRelation() {
+        return testRelation;
     }
 
     public ResolutionStatus getResolutionStatus() {

@@ -2,13 +2,14 @@ package org.jdepoix.testrelationfinder.relation;
 
 import com.github.javaparser.ast.body.MethodDeclaration;
 import com.github.javaparser.ast.expr.MethodCallExpr;
+import com.github.javaparser.resolution.declarations.ResolvedMethodDeclaration;
 
 import java.util.Optional;
 
 public class TestRelation {
     static class Builder {
         private Optional<MethodDeclaration> testMethod = Optional.empty();
-        private Optional<MethodCallExpr> relatedMethod = Optional.empty();
+        private Optional<ResolvedMethodDeclaration> relatedMethod = Optional.empty();
         private Optional<Type> type = Optional.empty();
 
         Builder setTestMethod(MethodDeclaration testMethod) {
@@ -16,7 +17,7 @@ public class TestRelation {
             return this;
         }
 
-        Builder setRelatedMethod(MethodCallExpr relatedMethod) {
+        Builder setRelatedMethod(ResolvedMethodDeclaration relatedMethod) {
             this.relatedMethod = Optional.of(relatedMethod);
             return this;
         }
@@ -43,10 +44,10 @@ public class TestRelation {
     }
 
     private final MethodDeclaration testMethod;
-    private final Optional<MethodCallExpr> relatedMethod;
+    private final Optional<ResolvedMethodDeclaration> relatedMethod;
     private Type type;
 
-    TestRelation(MethodDeclaration testMethod, Optional<MethodCallExpr> relatedMethod, Type type) {
+    TestRelation(MethodDeclaration testMethod, Optional<ResolvedMethodDeclaration> relatedMethod, Type type) {
         this.testMethod = testMethod;
         this.relatedMethod = relatedMethod;
         this.type = type;
@@ -60,11 +61,15 @@ public class TestRelation {
         this.type = type;
     }
 
-    public Optional<MethodCallExpr> getRelatedMethod() {
+    public Optional<ResolvedMethodDeclaration> getRelatedMethod() {
         return relatedMethod;
     }
 
     public MethodDeclaration getTestMethod() {
         return testMethod;
+    }
+
+    public boolean isResolved() {
+        return this.getType() == Type.MAPPED_BY_TEST_CLASS_NAME || this.getType() == Type.MAPPED_BY_TEST_CLASS_NAME;
     }
 }

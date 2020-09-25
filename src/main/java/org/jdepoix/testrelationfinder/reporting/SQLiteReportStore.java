@@ -15,7 +15,7 @@ import java.util.stream.Collectors;
 public class SQLiteReportStore {
     private static final String INSERT_TEST_RELATION_SQL =
         "INSERT INTO test_relations " +
-        "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);";
+        "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);";
     private static final String INSERT_TEST_CONTEXT_SQL =
         "INSERT INTO test_context VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?);";
     private static final int BATCH_SIZE = 1000;
@@ -66,7 +66,6 @@ public class SQLiteReportStore {
                         data.getId(),
                         data.getRepoName(),
                         data.getRelationType().toString(),
-                        data.getResolutionStatus().toString(),
                         data.getGwtResolutionStatus().toString(),
                         data.getTestMethodPackageName(),
                         data.getTestMethodClassName(),

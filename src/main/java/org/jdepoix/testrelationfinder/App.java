@@ -7,7 +7,6 @@ import org.jdepoix.testrelationfinder.gwt.GWTSectionResolver;
 import org.jdepoix.testrelationfinder.manager.RelationFinderRunner;
 import org.jdepoix.testrelationfinder.manager.RepoFileManager;
 import org.jdepoix.testrelationfinder.relation.Finder;
-import org.jdepoix.testrelationfinder.relation.TestRelationResolver;
 import org.jdepoix.testrelationfinder.reporting.ReportCreator;
 import org.jdepoix.testrelationfinder.reporting.SQLiteReportStore;
 import org.jdepoix.testrelationfinder.testmethod.Extractor;
@@ -22,7 +21,6 @@ public class App {
             new Extractor(),
             new Finder(),
             new ArchiveHandler(config),
-            new TestRelationResolver(),
             new GWTSectionResolver(),
             new GWTContextResolver(),
             new ReportCreator(),

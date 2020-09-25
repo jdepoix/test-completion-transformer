@@ -1,7 +1,6 @@
 package org.jdepoix.testrelationfinder.reporting;
 
 import org.jdepoix.testrelationfinder.gwt.GWTTestRelation;
-import org.jdepoix.testrelationfinder.relation.ResolvedTestRelation;
 import org.jdepoix.testrelationfinder.relation.TestRelation;
 
 import java.nio.file.Path;
@@ -13,7 +12,6 @@ public class TestRelationReportEntry {
     private final String id;
     private final String repoName;
     private final TestRelation.Type relationType;
-    private final ResolvedTestRelation.ResolutionStatus resolutionStatus;
     private final GWTTestRelation.ResolutionStatus gwtResolutionStatus;
     private final String testMethodPackageName;
     private final String testMethodClassName;
@@ -37,7 +35,6 @@ public class TestRelationReportEntry {
         String id,
         String repoName,
         TestRelation.Type relationType,
-        ResolvedTestRelation.ResolutionStatus resolutionStatus,
         GWTTestRelation.ResolutionStatus gwtResolutionStatus,
         String testMethodPackageName,
         String testMethodClassName,
@@ -60,7 +57,6 @@ public class TestRelationReportEntry {
         this.id = id;
         this.repoName = repoName;
         this.relationType = relationType;
-        this.resolutionStatus = resolutionStatus;
         this.gwtResolutionStatus = gwtResolutionStatus;
         this.testMethodPackageName = testMethodPackageName;
         this.testMethodClassName = testMethodClassName;
@@ -84,7 +80,6 @@ public class TestRelationReportEntry {
     TestRelationReportEntry(
         String repoName,
         TestRelation.Type relationType,
-        ResolvedTestRelation.ResolutionStatus resolutionStatus,
         GWTTestRelation.ResolutionStatus gwtResolutionStatus,
         String testMethodPackageName,
         String testMethodClassName,
@@ -108,7 +103,6 @@ public class TestRelationReportEntry {
             UUID.randomUUID().toString(),
             repoName,
             relationType,
-            resolutionStatus,
             gwtResolutionStatus,
             testMethodPackageName,
             testMethodClassName,
@@ -140,10 +134,6 @@ public class TestRelationReportEntry {
 
     public TestRelation.Type getRelationType() {
         return relationType;
-    }
-
-    public ResolvedTestRelation.ResolutionStatus getResolutionStatus() {
-        return resolutionStatus;
     }
 
     public GWTTestRelation.ResolutionStatus getGwtResolutionStatus() {

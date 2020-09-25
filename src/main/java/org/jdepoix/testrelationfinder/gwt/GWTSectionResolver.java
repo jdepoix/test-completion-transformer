@@ -8,7 +8,7 @@ import com.github.javaparser.ast.expr.AnnotationExpr;
 import com.github.javaparser.ast.expr.MethodCallExpr;
 import com.github.javaparser.ast.stmt.Statement;
 import com.github.javaparser.resolution.declarations.ResolvedMethodDeclaration;
-import org.jdepoix.testrelationfinder.relation.ResolvedTestRelation;
+import org.jdepoix.testrelationfinder.relation.TestRelation;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -44,22 +44,18 @@ public class GWTSectionResolver {
         "BeforeEach"
     );
 
-    public GWTTestRelation resolve(ResolvedTestRelation resolvedTestRelation) {
-        if (
-            resolvedTestRelation.getResolutionStatus() != ResolvedTestRelation.ResolutionStatus.RESOLVED
-            || resolvedTestRelation.getResolvedRelatedMethod().isEmpty()
-        ) {
-            return new GWTTestRelation(resolvedTestRelation, GWTTestRelation.ResolutionStatus.NOT_RESOLVED);
+    public GWTTestRelation resolve(TestRelation testRelation) {
+        if (!testRelation.isResolved() || testRelation.getRelatedMethod().isEmpty()) {
+            return new GWTTestRelation(testRelation, GWTTestRelation.ResolutionStatus.NOT_RESOLVED);
         }
 
-        final String relatedMethodName = resolvedTestRelation
-            .getTestRelation()
+        final String relatedMethodName = testRelation
             .getRelatedMethod()
             .get()
-            .getNameAsString();
+            .getName();
 
         boolean whenFound = false;
-        final MethodDeclaration testMethod = resolvedTestRelation.getTestRelation().getTestMethod();
+        final MethodDeclaration testMethod = testRelation.getTestMethod();
         final List<Statement> given = this.getSetupCode(testMethod);
         final List<Statement> then = new ArrayList<>();
         final List<MethodCallExpr> context = given
@@ -83,14 +79,14 @@ public class GWTSectionResolver {
                     } catch (Exception e) {}
                     if (
                         resolvedMethodCall == null
-                        || !resolvedTestRelation
-                            .getResolvedRelatedMethod()
+                        || !testRelation
+                            .getRelatedMethod()
                             .get()
                             .getQualifiedSignature()
                             .equals(resolvedMethodCall.getQualifiedSignature())
                     ) {
                         return new GWTTestRelation(
-                            resolvedTestRelation,
+                            testRelation,
                             GWTTestRelation.ResolutionStatus.MULTIPLE_WHENS_FOUND
                         );
                     }
@@ -104,7 +100,7 @@ public class GWTSectionResolver {
 
             if (!then.isEmpty()) {
                 if (statementContainsWhenCall) {
-                    return new GWTTestRelation(resolvedTestRelation, GWTTestRelation.ResolutionStatus.VIOLATES_SAP);
+                    return new GWTTestRelation(testRelation, GWTTestRelation.ResolutionStatus.VIOLATES_SAP);
                 }
 
                 then.add(statement);
@@ -136,15 +132,15 @@ public class GWTSectionResolver {
         }
 
         if (!whenFound) {
-            return new GWTTestRelation(resolvedTestRelation, GWTTestRelation.ResolutionStatus.NO_WHEN_FOUND);
+            return new GWTTestRelation(testRelation, GWTTestRelation.ResolutionStatus.NO_WHEN_FOUND);
         }
 
         if (then.isEmpty()) {
-            return new GWTTestRelation(resolvedTestRelation, GWTTestRelation.ResolutionStatus.NO_THEN_FOUND);
+            return new GWTTestRelation(testRelation, GWTTestRelation.ResolutionStatus.NO_THEN_FOUND);
         }
 
         return new GWTTestRelation(
-            resolvedTestRelation,
+            testRelation,
             given.stream().map(Statement::toString).collect(Collectors.joining("\n")),
             then.stream().map(Statement::toString).collect(Collectors.joining("\n")),
             this.findWhenLocation(statements, thenSectionStartIndex, relatedMethodName),

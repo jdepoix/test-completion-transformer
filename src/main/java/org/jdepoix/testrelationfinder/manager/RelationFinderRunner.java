@@ -4,7 +4,6 @@ import org.jdepoix.testrelationfinder.archive.ArchiveHandler;
 import org.jdepoix.testrelationfinder.gwt.GWTContextResolver;
 import org.jdepoix.testrelationfinder.gwt.GWTSectionResolver;
 import org.jdepoix.testrelationfinder.relation.Finder;
-import org.jdepoix.testrelationfinder.relation.TestRelationResolver;
 import org.jdepoix.testrelationfinder.reporting.ReportCreator;
 import org.jdepoix.testrelationfinder.reporting.SQLiteReportStore;
 import org.jdepoix.testrelationfinder.reporting.TestRelationReportEntry;
@@ -18,7 +17,6 @@ public class RelationFinderRunner {
     private final Extractor testExtractor;
     private final Finder relationFinder;
     private final ArchiveHandler archiveHandler;
-    private final TestRelationResolver testRelationResolver;
     private final GWTSectionResolver gwtSectionResolver;
     private final GWTContextResolver gwtContextResolver;
     private final ReportCreator reportCreator;
@@ -29,7 +27,6 @@ public class RelationFinderRunner {
         Extractor testExtractor,
         Finder relationFinder,
         ArchiveHandler archiveHandler,
-        TestRelationResolver testRelationResolver,
         GWTSectionResolver gwtSectionResolver,
         GWTContextResolver gwtContextResolver,
         ReportCreator reportCreator,
@@ -39,7 +36,6 @@ public class RelationFinderRunner {
         this.testExtractor = testExtractor;
         this.relationFinder = relationFinder;
         this.archiveHandler = archiveHandler;
-        this.testRelationResolver = testRelationResolver;
         this.gwtSectionResolver = gwtSectionResolver;
         this.gwtContextResolver = gwtContextResolver;
         this.reportCreator = reportCreator;
@@ -66,7 +62,6 @@ public class RelationFinderRunner {
     private void runRelationDetection(String repoName, Path path) throws Exception {
         final List<TestRelationReportEntry> resolvedTestRelations = this.relationFinder
             .findTestRelations(this.testExtractor.extractTestMethods(path))
-            .map(this.testRelationResolver::resolve)
             .map(this.gwtSectionResolver::resolve)
             .map(this.gwtContextResolver::resolve)
             .map(testRelation -> this.reportCreator.createReportEntry(repoName, path, testRelation))

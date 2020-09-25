@@ -2,7 +2,6 @@ package org.jdepoix.datasetcreator.gwt;
 
 import org.jdepoix.sqlite.ConnectionHandler;
 import org.jdepoix.testrelationfinder.gwt.GWTTestRelation;
-import org.jdepoix.testrelationfinder.relation.ResolvedTestRelation;
 import org.jdepoix.testrelationfinder.relation.TestRelation;
 import org.jdepoix.testrelationfinder.reporting.TestRelationReportEntry;
 
@@ -33,7 +32,6 @@ public class ReportRetriever {
                     resultSet.getString("id"),
                     resultSet.getString("repo_name"),
                     TestRelation.Type.valueOf(resultSet.getString("relation_type")),
-                    ResolvedTestRelation.ResolutionStatus.valueOf(resultSet.getString("resolution_status")),
                     GWTTestRelation.ResolutionStatus.valueOf(resultSet.getString("gwt_resolution_status")),
                     resultSet.getString("test_package"),
                     resultSet.getString("test_class"),

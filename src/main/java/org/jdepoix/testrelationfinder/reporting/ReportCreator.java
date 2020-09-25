@@ -8,7 +8,6 @@ import com.github.javaparser.symbolsolver.reflectionmodel.ReflectionMethodDeclar
 import org.jdepoix.testrelationfinder.gwt.GWTContext;
 import org.jdepoix.testrelationfinder.gwt.GWTTestRelation;
 import org.jdepoix.testrelationfinder.gwt.ResolvedGWTTestRelation;
-import org.jdepoix.testrelationfinder.relation.ResolvedTestRelation;
 import org.jdepoix.testrelationfinder.relation.TestRelation;
 
 import java.nio.file.Path;
@@ -22,13 +21,12 @@ public class ReportCreator {
         ResolvedGWTTestRelation resolvedGWTTestRelation
     ) {
         final GWTTestRelation gwtTestRelation = resolvedGWTTestRelation.getGwtTestRelation();
-        final ResolvedTestRelation resolvedTestRelation = gwtTestRelation.getResolvedTestRelation();
-        final TestRelation testRelation = resolvedTestRelation.getTestRelation();
+        final TestRelation testRelation = gwtTestRelation.getTestRelation();
         final MethodDeclaration testMethod = testRelation.getTestMethod();
         ResolvedMethodDeclaration resolvedTestMethod = testMethod.resolve();
         final Range testMethodTokenRange = testMethod.getRange().get();
-        final Optional<ResolvedMethodDeclaration> resolvedRelatedMethod = resolvedTestRelation
-            .getResolvedRelatedMethod();
+        final Optional<ResolvedMethodDeclaration> resolvedRelatedMethod = testRelation
+            .getRelatedMethod();
         final Optional<MethodDeclaration> resolvedRelatedAst = resolvedRelatedMethod
             .map(resolvedMethodDeclaration -> resolvedMethodDeclaration.toAst().orElse(null));
         final Optional<Range> relatedMethodTokenRange = resolvedRelatedAst.map(
@@ -38,7 +36,6 @@ public class ReportCreator {
         return new TestRelationReportEntry(
             repoName,
             testRelation.getType(),
-            resolvedTestRelation.getResolutionStatus(),
             gwtTestRelation.getResolutionStatus(),
             resolvedTestMethod.getPackageName(),
             resolvedTestMethod.getClassName(),
