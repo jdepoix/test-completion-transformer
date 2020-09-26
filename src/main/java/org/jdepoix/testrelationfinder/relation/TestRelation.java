@@ -71,6 +71,6 @@ public class TestRelation {
     }
 
     public boolean isResolved() {
-        return this.getType() == Type.MAPPED_BY_TEST_CLASS_NAME || this.getType() == Type.MAPPED_BY_TEST_CLASS_NAME;
+        return this.getType() == Type.MAPPED_BY_TEST_CLASS_NAME || this.getType() == Type.MAPPED_BY_TEST_METHOD_NAME;
     }
 }
