@@ -76,7 +76,16 @@ public class ASTResolver {
             e.printStackTrace();
         }
 
-        // TODO
+        /*
+        TODO safe following information:
+        - id
+        - when location
+        - source ast (sequentialized)
+        - target ast (sequentialized)
+        - target code (tokenized)
+        - test context method declarations length
+        - context method declarations length
+         */
         return null;
     }
 
