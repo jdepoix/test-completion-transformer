@@ -5,6 +5,7 @@ import com.github.javaparser.ast.CompilationUnit;
 import com.github.javaparser.ast.Node;
 import com.github.javaparser.ast.NodeList;
 import com.github.javaparser.ast.body.ClassOrInterfaceDeclaration;
+import com.github.javaparser.ast.body.EnumDeclaration;
 import com.github.javaparser.ast.body.MethodDeclaration;
 import com.github.javaparser.ast.expr.MethodCallExpr;
 import com.github.javaparser.ast.stmt.Statement;
@@ -13,7 +14,8 @@ import com.github.javaparser.symbolsolver.JavaSymbolSolver;
 import com.github.javaparser.symbolsolver.resolution.typesolvers.CombinedTypeSolver;
 import com.github.javaparser.symbolsolver.resolution.typesolvers.ReflectionTypeSolver;
 import org.jdepoix.ast.node.*;
-import org.jdepoix.ast.serialization.AST;
+import org.jdepoix.ast.serialization.ASTSerializer;
+import org.jdepoix.ast.serialization.SerializedAST;
 import org.jdepoix.config.ResultDirConfig;
 import org.jdepoix.testrelationfinder.gwt.GWTSectionResolver;
 import org.jdepoix.testrelationfinder.reporting.TestRelationReportEntry;
@@ -23,7 +25,7 @@ import java.util.*;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
-public class ASTResolver {
+public class DatapointResolver {
     public class CantResolve extends Exception {
         public CantResolve(String message) {
             super(message);
@@ -31,9 +33,11 @@ public class ASTResolver {
     }
 
     private final ResultDirConfig config;
+    private final ASTSerializer astSerializer;
 
-    public ASTResolver(ResultDirConfig config) {
+    public DatapointResolver(ResultDirConfig config, ASTSerializer astSerializer) {
         this.config = config;
+        this.astSerializer = astSerializer;
         final CombinedTypeSolver typeSolver = new CombinedTypeSolver();
         typeSolver.add(new ReflectionTypeSolver());
         StaticJavaParser.getConfiguration().setSymbolResolver(new JavaSymbolSolver(typeSolver));
@@ -70,8 +74,8 @@ public class ASTResolver {
         );
 
         try {
-            final AST ast = AST.serialize(testDeclaration);
-//            System.out.println(ast.printTree());
+            final SerializedAST ast = new ASTSerializer().serialize(testDeclaration);
+            System.out.println(ast.printTree());
         } catch (Exception e) {
             e.printStackTrace();
         }
@@ -156,14 +160,16 @@ public class ASTResolver {
     private MethodDeclaration parseRelatedMethod(TestRelationReportEntry entry) throws CantResolve, IOException {
         return findMethodDeclarationBySignature(
             StaticJavaParser.parse(config.resolveRepoFile(entry.getRepoName(), entry.getRelatedMethodPath().get())),
-            entry.getRelatedMethodClassName().get(), entry.getRelatedMethodSignature().get()
+            entry.getRelatedMethodClassName().get(),
+            entry.getRelatedMethodSignature().get()
         );
     }
 
     private MethodDeclaration parseTestMethod(TestRelationReportEntry entry) throws CantResolve, IOException {
         return findMethodDeclarationBySignature(
             StaticJavaParser.parse(config.resolveRepoFile(entry.getRepoName(), entry.getTestPath())),
-            entry.getTestMethodClassName(), entry.getTestMethodSignature()
+            entry.getTestMethodClassName(),
+            entry.getTestMethodSignature()
         );
     }
 
@@ -218,12 +224,20 @@ public class ASTResolver {
         String className,
         String methodSignature
     ) throws CantResolve {
-        return compilationUnit
+        Optional<? extends Node> parentDeclaration = compilationUnit
             .findFirst(
                 ClassOrInterfaceDeclaration.class,
-                classOrInterfaceDeclaration -> classOrInterfaceDeclaration.getNameAsString().equals(className)
-            )
-            .orElseThrow(() -> new CantResolve(String.format("can't find class %s", className)))
+                classOrInterfaceDeclaration -> classOrInterfaceDeclaration.resolve().getClassName().equals(className)
+            );
+        if (parentDeclaration.isEmpty()) {
+            parentDeclaration = compilationUnit
+                .findFirst(
+                    EnumDeclaration.class,
+                    enumDeclaration -> enumDeclaration.resolve().getClassName().equals(className)
+                );
+        }
+        return parentDeclaration
+            .orElseThrow(() -> new CantResolve(String.format("can't find class/enum %s", className)))
             .findFirst(
                 MethodDeclaration.class,
                 methodDeclaration -> methodDeclaration.getDeclarationAsString().equals(methodSignature)
