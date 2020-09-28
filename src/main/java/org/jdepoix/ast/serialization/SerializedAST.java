@@ -13,11 +13,12 @@ public class SerializedAST {
         this.root = root;
     }
 
-    public String printTree() {
-        return this.root.printTree(0);
-    }
-
     TypeNode getRoot() {
         return root;
+    }
+
+    @Override
+    public String toString() {
+        return this.root.toTreeString(0);
     }
 }

@@ -1,30 +1,39 @@
 package org.jdepoix.datasetcreator.gwt;
 
+import org.jdepoix.ast.serialization.ASTSequentializer;
 import org.jdepoix.ast.serialization.ASTSerializer;
 import org.jdepoix.config.ResultDirConfig;
+import org.jdepoix.datasetcreator.DatasetCreator;
+import org.jdepoix.datasetcreator.DatasetStore;
 import org.jdepoix.sqlite.ConnectionHandler;
-import org.jdepoix.testrelationfinder.reporting.TestRelationReportEntry;
 
 import java.nio.file.Path;
-import java.time.Duration;
-import java.time.Instant;
-import java.util.List;
+import java.util.logging.FileHandler;
+import java.util.logging.Logger;
+import java.util.logging.SimpleFormatter;
 
 public class App {
-    public static void main(String[] args) {
-        final Instant start = Instant.now();
-        try {
-            final ResultDirConfig config = new ResultDirConfig(Path.of(args[0]));
-            final ReportRetriever reportRetriever = new ReportRetriever(new ConnectionHandler(config.getDbFile()));
-            final DatapointResolver datapointResolver = new DatapointResolver(config, new ASTSerializer());
-            List<TestRelationReportEntry> testRelationReportEntries = reportRetriever.retrieve();
-            for (TestRelationReportEntry testRelationReportEntry : testRelationReportEntries) {
-                datapointResolver.resolve(testRelationReportEntry);
-            }
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
-        System.out.println(Duration.between(start, Instant.now()));
-    }
+    public static void main(String[] args) throws Exception {
+        System.setProperty("java.util.logging.SimpleFormatter.format", "%1$tF %1$tT %4$s %2$s %5$s%6$s%n");
 
+        final ResultDirConfig config = new ResultDirConfig(Path.of(args[0]));
+
+        final String datasetName = "gwt";
+        final DatasetStore datasetStore = DatasetStore.create(config, datasetName);
+
+        Logger logger = Logger.getLogger("DatasetCreator");
+        FileHandler fileHandler = new FileHandler(
+            config.getDatasetDir().resolve(datasetName).resolve("all.logs").toString()
+        );
+        logger.addHandler(fileHandler);
+        fileHandler.setFormatter(new SimpleFormatter());
+
+        new DatasetCreator(
+            config,
+            new GWTReportRetriever(new ConnectionHandler(config.getDbFile())),
+            new GWTDatapointResolver(config, new ASTSerializer(), new ASTSequentializer()),
+            datasetStore,
+            logger
+        ).create();
+    }
 }

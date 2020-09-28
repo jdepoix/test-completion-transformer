@@ -1,5 +1,6 @@
 package org.jdepoix.datasetcreator.gwt;
 
+import org.jdepoix.datasetcreator.ReportRetriever;
 import org.jdepoix.sqlite.ConnectionHandler;
 import org.jdepoix.testrelationfinder.gwt.GWTTestRelation;
 import org.jdepoix.testrelationfinder.relation.TestRelation;
@@ -12,13 +13,13 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 
-public class ReportRetriever {
+public class GWTReportRetriever implements ReportRetriever {
     private final String QUERY_GWT_RESOLVED_ENTRIES =
         "SELECT * from test_relations where gwt_resolution_status = 'RESOLVED'";
 
     private final ConnectionHandler connectionHandler;
 
-    public ReportRetriever(ConnectionHandler connectionHandler) {
+    public GWTReportRetriever(ConnectionHandler connectionHandler) {
         this.connectionHandler = connectionHandler;
     }
 

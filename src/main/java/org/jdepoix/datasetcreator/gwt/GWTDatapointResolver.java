@@ -14,9 +14,12 @@ import com.github.javaparser.symbolsolver.JavaSymbolSolver;
 import com.github.javaparser.symbolsolver.resolution.typesolvers.CombinedTypeSolver;
 import com.github.javaparser.symbolsolver.resolution.typesolvers.ReflectionTypeSolver;
 import org.jdepoix.ast.node.*;
+import org.jdepoix.ast.serialization.ASTSequentializer;
 import org.jdepoix.ast.serialization.ASTSerializer;
-import org.jdepoix.ast.serialization.SerializedAST;
+import org.jdepoix.ast.serialization.ASTToken;
 import org.jdepoix.config.ResultDirConfig;
+import org.jdepoix.datasetcreator.Datapoint;
+import org.jdepoix.datasetcreator.DatapointResolver;
 import org.jdepoix.testrelationfinder.gwt.GWTSectionResolver;
 import org.jdepoix.testrelationfinder.reporting.TestRelationReportEntry;
 
@@ -25,7 +28,7 @@ import java.util.*;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
-public class DatapointResolver {
+public class GWTDatapointResolver implements DatapointResolver {
     public class CantResolve extends Exception {
         public CantResolve(String message) {
             super(message);
@@ -34,18 +37,22 @@ public class DatapointResolver {
 
     private final ResultDirConfig config;
     private final ASTSerializer astSerializer;
+    private final ASTSequentializer astSequentializer;
 
-    public DatapointResolver(ResultDirConfig config, ASTSerializer astSerializer) {
+    public GWTDatapointResolver(
+        ResultDirConfig config, ASTSerializer astSerializer, ASTSequentializer astSequentializer
+    ) {
         this.config = config;
         this.astSerializer = astSerializer;
+        this.astSequentializer = astSequentializer;
         final CombinedTypeSolver typeSolver = new CombinedTypeSolver();
         typeSolver.add(new ReflectionTypeSolver());
         StaticJavaParser.getConfiguration().setSymbolResolver(new JavaSymbolSolver(typeSolver));
     }
 
-    // TODO build return type
-    // TODO safe prediction target
-    public ResolvedAST resolve(TestRelationReportEntry entry) throws IOException, CantResolve {
+    public Datapoint resolve(TestRelationReportEntry entry)
+        throws IOException, CantResolve, NoSuchFieldException, IllegalAccessException 
+    {
         final MethodDeclaration testMethod = parseTestMethod(entry);
         final MethodDeclaration relatedMethod = parseRelatedMethod(entry);
 
@@ -73,24 +80,24 @@ public class DatapointResolver {
             contextDeclarations
         );
 
-        try {
-            final SerializedAST ast = new ASTSerializer().serialize(testDeclaration);
-            System.out.println(ast.printTree());
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
+        return new GWTDatapoint(
+            entry.getId(),
+            astSequentializer.sequentialize(astSerializer.serialize(testDeclaration)),
+            sequentializeThen(thenSection),
+            thenSection.stream().map(Statement::toString).collect(Collectors.joining("\n")),
+            testContextDeclarations.size(),
+            contextDeclarations.size()
+        );
+    }
 
-        /*
-        TODO safe following information:
-        - id
-        - when location
-        - source ast (sequentialized)
-        - target ast (sequentialized)
-        - target code (tokenized)
-        - test context method declarations length
-        - context method declarations length
-         */
-        return null;
+    private List<ASTToken> sequentializeThen(List<Statement> statements)
+        throws NoSuchFieldException, IllegalAccessException
+    {
+        List<ASTToken> sequentializedThen = new ArrayList<>();
+        for (Statement statement : statements) {
+            sequentializedThen.addAll(astSequentializer.sequentialize(astSerializer.serialize(statement)));
+        }
+        return sequentializedThen;
     }
 
     private TestDeclaration buildTestDeclaration(

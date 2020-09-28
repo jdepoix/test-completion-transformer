@@ -11,7 +11,7 @@ abstract class NodeWithChildren extends SerializedASTNode {
         this.childNodes = childNodes;
     }
 
-    String printTree(int depth) {
+    String toTreeString(int depth) {
         return String.format(
             "%s%s\n%s",
             "\t".repeat(depth),
@@ -21,7 +21,7 @@ abstract class NodeWithChildren extends SerializedASTNode {
                 .map(
                     astNode ->
                         astNode instanceof NodeWithChildren
-                            ? ((NodeWithChildren) astNode).printTree(depth + 1)
+                            ? ((NodeWithChildren) astNode).toTreeString(depth + 1)
                             : String.format("%s%s", "\t".repeat(depth + 1), astNode.toString())
                 )
                 .collect(Collectors.joining("\n"))
