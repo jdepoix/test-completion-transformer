@@ -11,6 +11,7 @@ import com.github.javaparser.ast.expr.MethodCallExpr;
 import com.github.javaparser.ast.stmt.Statement;
 import com.github.javaparser.resolution.declarations.ResolvedMethodDeclaration;
 import com.github.javaparser.symbolsolver.JavaSymbolSolver;
+import com.github.javaparser.symbolsolver.javaparsermodel.JavaParserFacade;
 import com.github.javaparser.symbolsolver.resolution.typesolvers.CombinedTypeSolver;
 import com.github.javaparser.symbolsolver.resolution.typesolvers.ReflectionTypeSolver;
 import org.jdepoix.ast.node.*;
@@ -80,7 +81,7 @@ public class GWTDatapointResolver implements DatapointResolver {
             contextDeclarations
         );
 
-        return new GWTDatapoint(
+        final GWTDatapoint datapoint = new GWTDatapoint(
             entry.getId(),
             astSequentializer.sequentialize(astSerializer.serialize(testDeclaration)),
             sequentializeThen(thenSection),
@@ -88,6 +89,10 @@ public class GWTDatapointResolver implements DatapointResolver {
             testContextDeclarations.size(),
             contextDeclarations.size()
         );
+
+        JavaParserFacade.clearInstances();
+
+        return datapoint;
     }
 
     private List<ASTToken> sequentializeThen(List<Statement> statements)
