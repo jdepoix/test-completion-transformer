@@ -3,8 +3,8 @@
          xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
     <modelVersion>4.0.0</modelVersion>
-    <groupId>org.jdepoix.testrelationfinder</groupId>
-    <artifactId>testrelationfinder</artifactId>
+    <groupId>org.jdepoix.dataset</groupId>
+    <artifactId>dataset</artifactId>
     <version>1.0-SNAPSHOT</version>
     <build>
         <plugins>
@@ -34,7 +34,7 @@
                             </descriptorRefs>
                             <archive>
                                 <manifest>
-                                    <mainClass>org.jdepoix.testrelationfinder.App</mainClass>
+                                    <mainClass>org.jdepoix.dataset.testrelationfinder.App</mainClass>
                                 </manifest>
                             </archive>
                         </configuration>
@@ -52,7 +52,7 @@
                             </descriptorRefs>
                             <archive>
                                 <manifest>
-                                    <mainClass>org.jdepoix.datasetcreator.gwt.App</mainClass>
+                                    <mainClass>org.jdepoix.dataset.creator.gwt.App</mainClass>
                                 </manifest>
                             </archive>
                         </configuration>
