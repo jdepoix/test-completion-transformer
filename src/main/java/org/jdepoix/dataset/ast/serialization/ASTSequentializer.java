@@ -15,14 +15,14 @@ public class ASTSequentializer {
             return Stream.of(new ASTToken(nodeLabel, true));
         }
         if (node instanceof TerminalNode) {
-            return Stream.of(new ASTToken(String.format("<[%s]><[]/>", nodeLabel), false));
+            return Stream.of(new ASTToken(String.format("<[%s]><[/]>", nodeLabel), false));
         }
         return Stream.concat(
             Stream.concat(
                 Stream.of(new ASTToken(String.format("<[%s]>", nodeLabel), false)),
                 ((NodeWithChildren) node).getChildNodes().stream().flatMap(this::sequentializeNode)
             ),
-            Stream.of(new ASTToken(String.format("</[%s]>", nodeLabel), false))
+            Stream.of(new ASTToken(String.format("<[/%s]>", nodeLabel), false))
         );
     }
 }
