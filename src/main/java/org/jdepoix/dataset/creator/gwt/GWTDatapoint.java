@@ -3,6 +3,7 @@ package org.jdepoix.dataset.creator.gwt;
 import org.apache.commons.text.StringEscapeUtils;
 import org.jdepoix.dataset.ast.serialization.ASTToken;
 import org.jdepoix.dataset.creator.Datapoint;
+import org.jdepoix.dataset.testrelationfinder.gwt.GWTTestRelation;
 
 import java.util.List;
 import java.util.stream.Collectors;
@@ -14,6 +15,7 @@ public class GWTDatapoint implements Datapoint {
     private final String targetCode;
     private final int testContextDeclarationCount;
     private final int contextDeclarationCount;
+    private final GWTTestRelation.WhenLocation whenLocation;
 
     public GWTDatapoint(
         String testRelationId,
@@ -21,7 +23,8 @@ public class GWTDatapoint implements Datapoint {
         List<ASTToken> targetTokens,
         String targetCode,
         int testContextDeclarationCount,
-        int contextDeclarationCount
+        int contextDeclarationCount,
+        GWTTestRelation.WhenLocation whenLocation
     ) {
         this.testRelationId = testRelationId;
         this.sourceTokens = sourceTokens;
@@ -29,6 +32,7 @@ public class GWTDatapoint implements Datapoint {
         this.targetCode = targetCode;
         this.testContextDeclarationCount = testContextDeclarationCount;
         this.contextDeclarationCount = contextDeclarationCount;
+        this.whenLocation = whenLocation;
     }
 
     @Override
@@ -40,14 +44,16 @@ public class GWTDatapoint implements Datapoint {
                 "\"trgTok\":%s," +
                 "\"trgCode\":\"%s\"," +
                 "\"testCtxCount\":%d," +
-                "\"ctxCount\":%d" +
+                "\"ctxCount\":%d," +
+                "\"whenLocation\":\"%s\"" +
             "}",
             this.testRelationId,
             this.createJSONArray(this.sourceTokens),
             this.createJSONArray(this.targetTokens),
             StringEscapeUtils.escapeJson(this.targetCode),
             this.testContextDeclarationCount,
-            this.contextDeclarationCount
+            this.contextDeclarationCount,
+            this.whenLocation.toString()
         );
     }
 
@@ -59,5 +65,9 @@ public class GWTDatapoint implements Datapoint {
             "[\"%s\"]",
             tokens.stream().map(ASTToken::toJSON).collect(Collectors.joining("\",\""))
         );
+    }
+
+    public GWTTestRelation.WhenLocation getWhenLocation() {
+        return whenLocation;
     }
 }

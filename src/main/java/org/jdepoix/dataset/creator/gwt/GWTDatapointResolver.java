@@ -19,7 +19,6 @@ import org.jdepoix.dataset.ast.serialization.ASTSequentializer;
 import org.jdepoix.dataset.ast.serialization.ASTSerializer;
 import org.jdepoix.dataset.ast.serialization.ASTToken;
 import org.jdepoix.dataset.config.ResultDirConfig;
-import org.jdepoix.dataset.creator.Datapoint;
 import org.jdepoix.dataset.creator.DatapointResolver;
 import org.jdepoix.dataset.testrelationfinder.gwt.GWTSectionResolver;
 import org.jdepoix.dataset.testrelationfinder.reporting.TestRelationReportEntry;
@@ -29,7 +28,7 @@ import java.util.*;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
-public class GWTDatapointResolver implements DatapointResolver {
+public class GWTDatapointResolver implements DatapointResolver<GWTDatapoint> {
     public class CantResolve extends Exception {
         public CantResolve(String message) {
             super(message);
@@ -51,7 +50,7 @@ public class GWTDatapointResolver implements DatapointResolver {
         StaticJavaParser.getConfiguration().setSymbolResolver(new JavaSymbolSolver(typeSolver));
     }
 
-    public Datapoint resolve(TestRelationReportEntry entry)
+    public GWTDatapoint resolve(TestRelationReportEntry entry)
         throws IOException, CantResolve, NoSuchFieldException, IllegalAccessException 
     {
         final MethodDeclaration testMethod = parseTestMethod(entry);
@@ -87,7 +86,8 @@ public class GWTDatapointResolver implements DatapointResolver {
             sequentializeThen(thenSection),
             thenSection.stream().map(Statement::toString).collect(Collectors.joining("\n")),
             testContextDeclarations.size(),
-            contextDeclarations.size()
+            contextDeclarations.size(),
+            entry.getWhenLocation().get()
         );
 
         JavaParserFacade.clearInstances();
