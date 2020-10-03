@@ -152,14 +152,14 @@ public class GWTSectionResolver {
     private GWTTestRelation.WhenLocation findWhenLocation(
         List<Statement> statements, int thenSectionStartIndex, String relatedMethodName
     ) {
-        final boolean inThen = this.doStatementsContainRelatedMethodCall(
+        final boolean inGiven = this.doStatementsContainRelatedMethodCall(
             statements.subList(0, thenSectionStartIndex), relatedMethodName
         );
-        final boolean inGiven = this.doStatementsContainRelatedMethodCall(
+        final boolean inThen = this.doStatementsContainRelatedMethodCall(
             statements.subList(thenSectionStartIndex, statements.size()), relatedMethodName
         );
 
-        if (inGiven && inGiven) {
+        if (inGiven && inThen) {
             return GWTTestRelation.WhenLocation.BOTH;
         } else if (inGiven) {
             return GWTTestRelation.WhenLocation.GIVEN;
