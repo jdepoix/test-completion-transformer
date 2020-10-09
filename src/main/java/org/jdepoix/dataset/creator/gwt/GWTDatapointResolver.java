@@ -8,6 +8,7 @@ import com.github.javaparser.ast.body.ClassOrInterfaceDeclaration;
 import com.github.javaparser.ast.body.EnumDeclaration;
 import com.github.javaparser.ast.body.MethodDeclaration;
 import com.github.javaparser.ast.expr.MethodCallExpr;
+import com.github.javaparser.ast.nodeTypes.NodeWithMembers;
 import com.github.javaparser.ast.stmt.Statement;
 import com.github.javaparser.resolution.declarations.ResolvedMethodDeclaration;
 import com.github.javaparser.symbolsolver.JavaSymbolSolver;
@@ -236,7 +237,7 @@ public class GWTDatapointResolver implements DatapointResolver<GWTDatapoint> {
         String className,
         String methodSignature
     ) throws CantResolve {
-        Optional<? extends Node> parentDeclaration = compilationUnit
+        Optional<? extends NodeWithMembers<? extends Node>> parentDeclaration = compilationUnit
             .findFirst(
                 ClassOrInterfaceDeclaration.class,
                 classOrInterfaceDeclaration -> classOrInterfaceDeclaration.resolve().getClassName().equals(className)
@@ -248,12 +249,13 @@ public class GWTDatapointResolver implements DatapointResolver<GWTDatapoint> {
                     enumDeclaration -> enumDeclaration.resolve().getClassName().equals(className)
                 );
         }
+
         return parentDeclaration
             .orElseThrow(() -> new CantResolve(String.format("can't find class/enum %s", className)))
-            .findFirst(
-                MethodDeclaration.class,
-                methodDeclaration -> methodDeclaration.getDeclarationAsString().equals(methodSignature)
-            )
+            .getMethods()
+            .stream()
+            .filter(methodDeclaration -> methodDeclaration.getDeclarationAsString().equals(methodSignature))
+            .findFirst()
             .orElseThrow(() -> new CantResolve(String.format("can't find method %s", methodSignature)));
     }
 }
