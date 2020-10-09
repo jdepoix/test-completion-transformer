@@ -33,7 +33,7 @@ public class App {
         );
         final DatasetStore<GWTDatapoint> whenInGivenDatasetStore = DatasetStore.create(
             config,
-            "gwt_when_in_then",
+            "gwt_when_in_given",
             datapoint -> datapoint.getWhenLocation().equals(GWTTestRelation.WhenLocation.GIVEN)
         );
 

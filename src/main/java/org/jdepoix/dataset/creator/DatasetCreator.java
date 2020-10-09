@@ -38,8 +38,9 @@ public class DatasetCreator <T extends Datapoint> {
             }
             for (TestRelationReportEntry testRelationReportEntry : testRelationReportEntries) {
                 try {
+                    final T datapoint = datapointResolver.resolve(testRelationReportEntry);
                     for (StoreWriter<T> storeWriter : storeWriters) {
-                        storeWriter.store(datapointResolver.resolve(testRelationReportEntry));
+                        storeWriter.store(datapoint);
                     }
                     this.logger.info(testRelationReportEntry.getId());
                 } catch (Exception | Error e) {
