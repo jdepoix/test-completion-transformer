@@ -3,6 +3,7 @@ package org.jdepoix.dataset.ast.serialization;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Stack;
+import java.util.stream.Collectors;
 
 public class ASTDesequentializer {
     class NotDesequentializable extends Exception {
@@ -15,9 +16,9 @@ public class ASTDesequentializer {
         }
     }
 
-    public SerializedAST desequentialize(List<String> sequence) throws NotDesequentializable {
+    public List<SerializedAST> desequentialize(List<String> sequence) throws NotDesequentializable {
         final Stack<NodeWithChildren> parents = new Stack<>();
-        TypeNode root = null;
+        final List<TypeNode> roots = new ArrayList<>();
 
         for (String item : sequence) {
             if (!item.startsWith("<[") || !item.endsWith("]>")) {
@@ -44,11 +45,11 @@ public class ASTDesequentializer {
                     throw new NotDesequentializable(item);
                 }
 
-                if (parents.empty() && root == null) {
+                if (parents.empty()) {
                     if (!(node instanceof TypeNode)) {
                         throw new NotDesequentializable(item);
                     }
-                    root = (TypeNode) node;
+                    roots.add((TypeNode) node);
                 } else {
                     parents.peek().addChildNode(node);
                 }
@@ -56,10 +57,10 @@ public class ASTDesequentializer {
             }
         }
 
-        if (root == null) {
+        if (roots.isEmpty()) {
             throw new NotDesequentializable();
         }
 
-        return new SerializedAST(root);
+        return roots.stream().map(SerializedAST::new).collect(Collectors.toList());
     }
 }

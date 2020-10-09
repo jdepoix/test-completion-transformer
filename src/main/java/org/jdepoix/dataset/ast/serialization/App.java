@@ -3,13 +3,15 @@ package org.jdepoix.dataset.ast.serialization;
 import com.github.javaparser.StaticJavaParser;
 import com.github.javaparser.ast.CompilationUnit;
 import com.github.javaparser.ast.Node;
+import com.github.javaparser.ast.NodeList;
 import com.github.javaparser.ast.body.ClassOrInterfaceDeclaration;
 import com.github.javaparser.ast.body.MethodDeclaration;
-import org.apache.commons.text.StringEscapeUtils;
 import org.jdepoix.dataset.ast.node.ThenSection;
 
+import java.lang.reflect.InvocationTargetException;
 import java.util.List;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 public class App {
     public static void main(String[] args) throws Exception {
@@ -53,9 +55,21 @@ public class App {
         final List<ASTToken> sequentialize = astSequentializer.sequentialize(ast);
         final List<String> sequence = sequentialize.stream().map(astToken -> astToken.toString()).collect(Collectors.toList());
         System.out.println(String.join("\n", sequence));
-
         final ASTDesequentializer astDesequentializer = new ASTDesequentializer();
         final ASTDeserializer astDeserializer = new ASTDeserializer();
-        System.out.println(astDeserializer.deserialize(astDesequentializer.desequentialize(sequence)).toString());
+
+
+        final NodeList<Node> nodes = new NodeList<>(
+            astDesequentializer.desequentialize(
+                Stream.concat(sequence.stream(), sequence.stream()).collect(Collectors.toList())
+            ).stream().map(serializedAST -> {
+                try {
+                    return astDeserializer.deserialize(serializedAST);
+                } catch (Exception e) {
+                    throw new RuntimeException(e);
+                }
+            }).collect(Collectors.toList())
+        );
+        System.out.println(nodes.toString());
     }
 }
