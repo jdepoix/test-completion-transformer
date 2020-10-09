@@ -17,10 +17,14 @@ public class ASTSequentializer {
         if (node instanceof TerminalNode) {
             return Stream.of(new ASTToken(String.format("<[%s]><[/]>", nodeLabel), false));
         }
+        final List<? extends SerializedASTNode> childNodes = ((NodeWithChildren) node).getChildNodes();
+        if (node instanceof TypeNode && childNodes.size() == 1 && childNodes.get(0) instanceof TerminalNode) {
+            return Stream.of(new ASTToken(String.format("<[%s]><[/]>", nodeLabel), false));
+        }
         return Stream.concat(
             Stream.concat(
                 Stream.of(new ASTToken(String.format("<[%s]>", nodeLabel), false)),
-                ((NodeWithChildren) node).getChildNodes().stream().flatMap(this::sequentializeNode)
+                childNodes.stream().flatMap(this::sequentializeNode)
             ),
             Stream.of(new ASTToken(String.format("<[/%s]>", nodeLabel), false))
         );

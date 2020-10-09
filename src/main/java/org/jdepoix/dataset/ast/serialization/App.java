@@ -2,8 +2,11 @@ package org.jdepoix.dataset.ast.serialization;
 
 import com.github.javaparser.StaticJavaParser;
 import com.github.javaparser.ast.CompilationUnit;
+import com.github.javaparser.ast.Node;
 import com.github.javaparser.ast.body.ClassOrInterfaceDeclaration;
+import com.github.javaparser.ast.body.MethodDeclaration;
 import org.apache.commons.text.StringEscapeUtils;
+import org.jdepoix.dataset.ast.node.ThenSection;
 
 import java.util.List;
 import java.util.stream.Collectors;
@@ -40,19 +43,17 @@ public class App {
             "}}";
 
         final CompilationUnit compilationUnit = StaticJavaParser.parse(code);
+        compilationUnit.findFirst(MethodDeclaration.class).get().getBody().get().getStatements().add(new ThenSection());
         final SerializedAST ast = new ASTSerializer().serialize(compilationUnit.findFirst(ClassOrInterfaceDeclaration.class).get());
         System.out.println(ast.toString());
         System.out.println();
-//        final Node node = new ASTDeserializer().deserialize(ast);
-//        System.out.println(node.toString());
+
 
         final ASTSequentializer astSequentializer = new ASTSequentializer();
         final List<ASTToken> sequentialize = astSequentializer.sequentialize(ast);
         System.out.println(String.join("\n", sequentialize.stream().map(astToken -> StringEscapeUtils.escapeJava(astToken.toString())).collect(Collectors.toList())));
 
-
-        System.out.println();
-        final String x = StringEscapeUtils.escapeJson("test/te'st/test");
-        System.out.println(x);
+//        final Node node = new ASTDeserializer().deserialize(ast);
+//        System.out.println(node.toString());
     }
 }

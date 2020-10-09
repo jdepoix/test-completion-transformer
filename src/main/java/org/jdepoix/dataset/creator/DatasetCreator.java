@@ -1,7 +1,6 @@
 package org.jdepoix.dataset.creator;
 
 import com.github.javaparser.symbolsolver.javaparsermodel.JavaParserFacade;
-import org.jdepoix.dataset.config.ResultDirConfig;
 import org.jdepoix.dataset.testrelationfinder.reporting.TestRelationReportEntry;
 
 import java.util.ArrayList;
@@ -27,7 +26,9 @@ public class DatasetCreator <T extends Datapoint> {
     }
 
     public void create() throws Exception {
-        List<TestRelationReportEntry> testRelationReportEntries = reportRetriever.retrieve();
+        final List<TestRelationReportEntry> testRelationReportEntries = reportRetriever.retrieve();
+        final int entriesSize = testRelationReportEntries.size();
+        int completedCounter = 0;
         List<StoreWriter<T>> storeWriters = new ArrayList<>();
         try {
             for (DatasetStore<T> datasetStore : this.datasetStores) {
@@ -39,7 +40,15 @@ public class DatasetCreator <T extends Datapoint> {
                     for (StoreWriter<T> storeWriter : storeWriters) {
                         storeWriter.store(datapoint);
                     }
-                    this.logger.info(testRelationReportEntry.getId());
+                    completedCounter++;
+                    this.logger.info(
+                        String.format(
+                            "%d/%d: %s",
+                            completedCounter,
+                            entriesSize,
+                            testRelationReportEntry.getId()
+                        )
+                    );
                 } catch (Exception | Error e) {
                     JavaParserFacade.clearInstances();
                     System.gc();
