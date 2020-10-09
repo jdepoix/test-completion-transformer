@@ -9,22 +9,19 @@ import java.util.List;
 import java.util.logging.Logger;
 
 public class DatasetCreator <T extends Datapoint> {
-    private final ResultDirConfig config;
     private final ReportRetriever reportRetriever;
-    private final DatapointResolver<T> datapointResolver;
+    private final DatapointCreator<T> datapointCreator;
     private final List<DatasetStore<T>> datasetStores;
     private final Logger logger;
 
     public DatasetCreator(
-        ResultDirConfig config,
         ReportRetriever reportRetriever,
-        DatapointResolver<T> datapointResolver,
+        DatapointCreator<T> datapointCreator,
         List<DatasetStore<T>> datasetStores,
         Logger logger
     ) {
-        this.config = config;
         this.reportRetriever = reportRetriever;
-        this.datapointResolver = datapointResolver;
+        this.datapointCreator = datapointCreator;
         this.datasetStores = datasetStores;
         this.logger = logger;
     }
@@ -38,7 +35,7 @@ public class DatasetCreator <T extends Datapoint> {
             }
             for (TestRelationReportEntry testRelationReportEntry : testRelationReportEntries) {
                 try {
-                    final T datapoint = datapointResolver.resolve(testRelationReportEntry);
+                    final T datapoint = datapointCreator.create(testRelationReportEntry);
                     for (StoreWriter<T> storeWriter : storeWriters) {
                         storeWriter.store(datapoint);
                     }

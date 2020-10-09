@@ -1,5 +1,6 @@
 package org.jdepoix.dataset.creator.gwt;
 
+import org.jdepoix.dataset.ast.TestDeclarationCreator;
 import org.jdepoix.dataset.ast.serialization.ASTSequentializer;
 import org.jdepoix.dataset.ast.serialization.ASTSerializer;
 import org.jdepoix.dataset.config.ResultDirConfig;
@@ -45,9 +46,13 @@ public class App {
         fileHandler.setFormatter(new SimpleFormatter());
 
         new DatasetCreator(
-            config,
             new GWTReportRetriever(new ConnectionHandler(config.getDbFile())),
-            new GWTDatapointResolver(config, new ASTSerializer(), new ASTSequentializer()),
+            new GWTDatapointCreator(
+                config,
+                new TestDeclarationCreator(),
+                new ASTSerializer(),
+                new ASTSequentializer()
+            ),
             List.of(completeDatasetStore, whenVisibleDatasetStore, whenInGivenDatasetStore),
             logger
         ).create();
