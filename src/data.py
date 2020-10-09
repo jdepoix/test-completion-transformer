@@ -1,5 +1,6 @@
 import json
 from argparse import ArgumentParser
+import os
 
 import torch
 from pytorch_lightning import LightningDataModule
@@ -45,19 +46,49 @@ class BatchPadder():
         )
 
 
+class LineCachedFile():
+    def __init__(self, path):
+        self._path = path
+        self._new_line_indices = self._load_line_indices()
+
+    def get_total_line_count(self):
+        return len(self._new_line_indices)
+
+    def get_line(self, number):
+        with open(self._path) as file:
+            file.seek(self._new_line_indices[number])
+            return file.readline()
+
+    def _load_line_indices(self):
+        cache_file_path = f'{self._path}.linecache'
+        if os.path.exists(cache_file_path):
+            with open(cache_file_path) as cache_file:
+                return json.loads(cache_file.read())
+
+        cache = self._create_line_cache()
+        with open(cache_file_path, 'w+') as cache_file:
+            cache_file.write(json.dumps(cache), separators=(',', ':'))
+        return cache
+
+    def _create_line_cache(self):
+        cache = []
+        with open(self._path) as file:
+            cursor = 0
+            for line in file:
+                cache.append(cursor)
+                cursor += len(line)
+        return cache
+
+
 class GwtDataset(Dataset):
     def __init__(self, dataset_path):
-        # TODO should I really load this into memory???
-        self._data = []
-        with open(dataset_path) as dataset_file:
-            for json_line in dataset_file:
-                self._data.append(json.loads(json_line))
+        self._dataset_file = LineCachedFile(dataset_path)
 
     def __len__(self):
-        return len(self._data)
+        return self._dataset_file.get_total_line_count()
 
     def __getitem__(self, item):
-        src, trg = self._data[item]
+        src, trg = json.loads(self._dataset_file.get_line(item))
         return torch.tensor(src), torch.tensor(trg)
 
 

@@ -26,7 +26,6 @@ class PositionalEncoding(nn.Module):
         return self.dropout(x)
 
 
-# TODO check if I need to do .to(device) everywhere...
 class GwtSectionPredictionTransformer(pl.LightningModule):
     @staticmethod
     def add_model_specific_args(parent_parser):
@@ -62,6 +61,7 @@ class GwtSectionPredictionTransformer(pl.LightningModule):
 
         self.padding_token_idx = padding_token_idx
         self.embedding_size = embedding_size
+        self._scale_factor = math.sqrt(self.embedding_size)
 
         self.embedding = nn.Embedding(vocab_size, embedding_size)
         self.positional_encoding = PositionalEncoding(embedding_size, max_sequence_length, positional_encoding_dropout)
@@ -77,8 +77,8 @@ class GwtSectionPredictionTransformer(pl.LightningModule):
         self.save_hyperparameters()
 
     def forward(self, src, target):
-        embedded_src = self.positional_encoding(self.embedding(src) * math.sqrt(self.embedding_size))
-        embedded_target = self.positional_encoding(self.embedding(target) * math.sqrt(self.embedding_size))
+        embedded_src = self.positional_encoding(self.embedding(src) * self._scale_factor)
+        embedded_target = self.positional_encoding(self.embedding(target) * self._scale_factor)
 
         src_key_padding_mask = self._generate_key_padding_mask(src)
         target_key_padding_mask = self._generate_key_padding_mask(target)
