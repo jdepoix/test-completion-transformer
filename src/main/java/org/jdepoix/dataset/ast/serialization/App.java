@@ -51,9 +51,11 @@ public class App {
 
         final ASTSequentializer astSequentializer = new ASTSequentializer();
         final List<ASTToken> sequentialize = astSequentializer.sequentialize(ast);
-        System.out.println(String.join("\n", sequentialize.stream().map(astToken -> StringEscapeUtils.escapeJava(astToken.toString())).collect(Collectors.toList())));
+        final List<String> sequence = sequentialize.stream().map(astToken -> astToken.toString()).collect(Collectors.toList());
+        System.out.println(String.join("\n", sequence));
 
-//        final Node node = new ASTDeserializer().deserialize(ast);
-//        System.out.println(node.toString());
+        final ASTDesequentializer astDesequentializer = new ASTDesequentializer();
+        final ASTDeserializer astDeserializer = new ASTDeserializer();
+        System.out.println(astDeserializer.deserialize(astDesequentializer.desequentialize(sequence)).toString());
     }
 }

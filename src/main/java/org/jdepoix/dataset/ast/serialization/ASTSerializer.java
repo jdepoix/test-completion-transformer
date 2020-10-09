@@ -75,7 +75,7 @@ public class ASTSerializer {
             return Optional.empty();
         }
 
-        final List<TypeNode> serializedNodeList = nodeList.stream()
+        final List<SerializedASTNode> serializedNodeList = nodeList.stream()
             .map(node -> {
                 try {
                     final List<SerializedASTNode> serializedChildren = serializeChildren(node);

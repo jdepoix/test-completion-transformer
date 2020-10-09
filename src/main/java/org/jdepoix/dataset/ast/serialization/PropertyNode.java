@@ -5,7 +5,7 @@ import java.util.List;
 class PropertyNode extends NodeWithChildren {
     private final String property;
 
-    PropertyNode(String type, List<? extends SerializedASTNode> childNodes, String property) {
+    PropertyNode(String type, List<SerializedASTNode> childNodes, String property) {
         super(type, childNodes);
         this.property = property;
     }

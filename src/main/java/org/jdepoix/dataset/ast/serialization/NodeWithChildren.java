@@ -4,9 +4,9 @@ import java.util.List;
 import java.util.stream.Collectors;
 
 abstract class NodeWithChildren extends SerializedASTNode {
-    private final List<? extends SerializedASTNode> childNodes;
+    private List<SerializedASTNode> childNodes;
 
-    NodeWithChildren(String type, List<? extends SerializedASTNode> childNodes) {
+    NodeWithChildren(String type, List<SerializedASTNode> childNodes) {
         super(type);
         this.childNodes = childNodes;
     }
@@ -30,5 +30,9 @@ abstract class NodeWithChildren extends SerializedASTNode {
 
     public List<? extends SerializedASTNode> getChildNodes() {
         return childNodes;
+    }
+
+    public <T extends SerializedASTNode> void addChildNode(T node) {
+        this.childNodes.add(node);
     }
 }
