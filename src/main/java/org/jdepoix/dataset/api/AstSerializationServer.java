@@ -10,7 +10,7 @@ class AstSerializationServer {
 
         while (true) {
             final Socket socket = serverSocket.accept();
-            new Thread(new MessageHandler(socket)).run();
+            new Thread(new MessageHandler(socket)).start();
         }
     }
 }

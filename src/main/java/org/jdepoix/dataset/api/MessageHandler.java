@@ -1,5 +1,6 @@
 package org.jdepoix.dataset.api;
 
+import com.fasterxml.jackson.core.JsonParser;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
@@ -45,6 +46,11 @@ class MessageHandler implements Runnable {
 
     @Override
     public void run() {
+        try {
+            Thread.sleep(5000);
+        } catch (InterruptedException e) {
+            e.printStackTrace();
+        }
         try (final BufferedReader reader = new BufferedReader(new InputStreamReader(socket.getInputStream()))) {
             final RequestMessage requestMessage = new ObjectMapper().readValue(reader.readLine(), RequestMessage.class);
             switch (requestMessage.command) {
@@ -85,9 +91,8 @@ class MessageHandler implements Runnable {
     }
 
     private void sendResponse(ResponseMessage message) throws IOException {
-        try (final OutputStream outputStream = this.socket.getOutputStream()) {
-            new ObjectMapper().writeValue(outputStream, message);
+        try(final OutputStreamWriter writer = new OutputStreamWriter(this.socket.getOutputStream())) {
+            new ObjectMapper().writeValue(writer, message);
         }
-        this.socket.close();
     }
 }
