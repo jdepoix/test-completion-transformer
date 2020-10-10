@@ -46,7 +46,6 @@ public class TestDeclarationCreator {
     private void substituteGWTNodesInTestMethod(MethodDeclaration testMethod, MethodDeclaration relatedMethod) {
         testMethod.findAll(
             MethodCallExpr.class,
-            // TODO check if getNamAsString is correct
             methodCallExpr -> methodCallExpr.getNameAsString().equals(relatedMethod.getNameAsString())
         ).forEach(methodCallExpr -> methodCallExpr.replace(WhenMethodCallExpr.fromMethodCallExpr(methodCallExpr)));
 
