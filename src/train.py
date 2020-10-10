@@ -37,7 +37,7 @@ def train(args):
         args.transformer_dropout,
     )
 
-    logger = loggers.TensorBoardLogger('lightning_logs')
+    logger = loggers.TensorBoardLogger('../lightning_logs')
     logger.log_hyperparams(args)
     trainer = pl.Trainer.from_argparse_args(args, logger=logger)
     trainer.fit(model, data_module)

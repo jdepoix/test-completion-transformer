@@ -110,6 +110,7 @@ class GwtSectionPredictionTransformer(pl.LightningModule):
         return result
 
     def validation_step(self, batch, batch_idx):
+        # TODO use predictor for validation?
         loss = self._get_forward_loss(batch)
         result = pl.EvalResult(checkpoint_on=loss)
         result.log('eval_loss', loss)
