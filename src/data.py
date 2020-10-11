@@ -24,6 +24,12 @@ class Vocab():
         self._words = words
         self._indices = indices
 
+    def encode(self, words):
+        return [self.get_index(word) for word in words]
+
+    def decode(self, indices):
+        return [self.get_word(index) for index in indices]
+
     def get_index(self, word):
         return self._indices[word]
 

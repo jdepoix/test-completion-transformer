@@ -1,3 +1,4 @@
 torch
 pytorch-lightning
 tensorboard
+sentencepiece
