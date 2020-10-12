@@ -10,6 +10,7 @@ from model import GwtSectionPredictionTransformer
 def get_parser():
     parser = ArgumentParser()
     parser.add_argument('--dataset_base_path', type=str, required=True)
+    parser.add_argument('--tensorboard_dir', type=str, default='lightning_logs')
     return parser
 
 
@@ -37,7 +38,7 @@ def train(args):
         args.transformer_dropout,
     )
 
-    logger = loggers.TensorBoardLogger('../lightning_logs')
+    logger = loggers.TensorBoardLogger(args.tensorboard_dir)
     logger.log_hyperparams(args)
     trainer = pl.Trainer.from_argparse_args(args, logger=logger)
     trainer.fit(model, data_module)
