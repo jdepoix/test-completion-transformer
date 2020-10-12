@@ -116,8 +116,8 @@ def get_file_length(path):
 
 
 if __name__ == '__main__':
-    # TODO limit seq length
     # TODO use UNK or unidecode for weird chars?
+    # TODO unidecode swallows emojis (is UNK or not having a char better...?)
     VOCAB_SIZE = 16000
 
     input_dataset_path = sys.argv[1]
@@ -152,7 +152,13 @@ if __name__ == '__main__':
         output_dataset_path,
         bpe_vocab_path,
         only_values=False,
-        special_words=[Vocab.PAD_TOKEN, Vocab.SOS_TOKEN, Vocab.EOS_TOKEN, BpeProcessor.NEW_LINE_TOKEN],
+        special_words=[
+            Vocab.PAD_TOKEN,
+            Vocab.SOS_TOKEN,
+            Vocab.EOS_TOKEN,
+            BpeProcessor.NEW_LINE_TOKEN,
+            BpeProcessor.UNKOWN_TOKEN,
+        ],
     )
     print('Start creating data split')
     create_encoded_dataset_split(data_split_dir_path, output_dataset_path, bpe_vocab_path, (.8, .1, .1))
