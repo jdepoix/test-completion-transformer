@@ -73,7 +73,7 @@ class LineCachedFile():
 
         cache = self._create_line_cache()
         with open(cache_file_path, 'w+') as cache_file:
-            cache_file.write(json.dumps(cache), separators=(',', ':'))
+            cache_file.write(json.dumps(cache, separators=(',', ':')))
         return cache
 
     def _create_line_cache(self):
