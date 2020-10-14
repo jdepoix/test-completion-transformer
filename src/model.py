@@ -30,9 +30,9 @@ class GwtSectionPredictionTransformer(pl.LightningModule):
     @staticmethod
     def add_model_specific_args(parent_parser):
         parser = ArgumentParser(parents=[parent_parser], add_help=False)
-        parser.add_argument('--max_sequence_length', type=int, default=10000)
+        parser.add_argument('--max_sequence_length', type=int, default=1024)
         parser.add_argument('--embedding_size', type=int, default=512)
-        parser.add_argument('--learning_rate', type=float, default=1e-3)
+        parser.add_argument('--learning_rate', type=float, default=1e-4)
         parser.add_argument('--num_attention_heads', type=int, default=8)
         parser.add_argument('--num_encoder_layers', type=int, default=6)
         parser.add_argument('--num_decoder_layers', type=int, default=6)
@@ -87,7 +87,7 @@ class GwtSectionPredictionTransformer(pl.LightningModule):
             embedded_src,
             embedded_target,
             src_key_padding_mask=src_key_padding_mask,
-            tgt_mask=self.transformer.generate_square_subsequent_mask(target.shape[0]),
+            tgt_mask=self.transformer.generate_square_subsequent_mask(target.shape[0]).to(src.device),
             tgt_key_padding_mask=target_key_padding_mask,
             memory_key_padding_mask=src_key_padding_mask.clone(),
         )

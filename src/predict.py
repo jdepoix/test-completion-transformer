@@ -15,10 +15,42 @@ class ThenSectionPredictor():
         prediction = [self._sos_index]
         while prediction[-1] != self._eos_index and len(prediction) < self._max_length:
             prediction.append(self._forward(test_declaration_tensor, prediction))
-        return prediction
+        return prediction[1:-1]
 
     def _forward(self, source, previous_predictions):
         with torch.no_grad():
             target = torch.tensor(previous_predictions).to(source.device)
             output = self._model(source.unsqueeze(1), target.unsqueeze(1))
             return output[-1].argmax().item()
+
+
+class PredictionPipeline():
+    def __init__(self, predictor, bpe_processor, vocab, sequentialization_client):
+        self._predictor = predictor
+        self._bpe_processor = bpe_processor
+        self._vocab = vocab
+        self._sequentialization_client = sequentialization_client
+
+    def predict(
+        self,
+        test_file_content,
+        test_class_name,
+        test_method_signature,
+        related_file_content,
+        related_class_name,
+        related_method_signature,
+    ):
+        test_declaration_sequence = self._sequentialization_client.create_test_declaration_sequence(
+            test_file_content,
+            test_class_name,
+            test_method_signature,
+            related_file_content,
+            related_class_name,
+            related_method_signature,
+        )
+        encoded_sequence = self._bpe_processor.encode(test_declaration_sequence)
+        input = self._vocab.encode(encoded_sequence)
+        prediction = self._predictor.predict(input)
+        decoded_prediction = self._vocab.decode(prediction)
+        decoded_sequence = self._bpe_processor.decode(decoded_prediction)
+        return self._sequentialization_client.parse_then_sequence_to_code(decoded_sequence)
