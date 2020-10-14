@@ -103,6 +103,7 @@ class GwtDataModule(LightningDataModule):
     def add_dataset_specific_args(parent_parser):
         parser = ArgumentParser(parents=[parent_parser], add_help=False)
         parser.add_argument('--batch_size', type=int, default=32)
+        # TODO does it make sense to have more workers than GPUs?
         parser.add_argument('--num_dataset_workers', type=int, default=8)
         return parser
 

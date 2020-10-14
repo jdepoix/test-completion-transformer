@@ -17,9 +17,6 @@ def get_parser():
 def train(args):
     # TODO implement invalidate-dataset-cache param
     # TODO pin pytorch lightning version
-    # TODO Dataloader(num_workers>0) and ddp_spawn do not mix well! Your performance might suffer dramatically. Please consider setting distributed_backend=ddp to use num_workers > 0 (this is a bottleneck of Python .spawn() and PyTorch
-    #   warnings.warn(*args, **kwargs)
-
     # TODO UserWarning: Could not log computational graph since the `model.example_input_array` attribute is not set or `input_array` was not given
     #   warnings.warn(*args, **kwargs)
 
@@ -60,7 +57,7 @@ def train(args):
 
     logger = loggers.TensorBoardLogger(args.tensorboard_dir)
     logger.log_hyperparams(args)
-    trainer = pl.Trainer.from_argparse_args(args, logger=logger, distributed_backend='ddp')
+    trainer = pl.Trainer.from_argparse_args(args, logger=logger)
     trainer.fit(model, data_module)
 
 
