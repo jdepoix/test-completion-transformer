@@ -27,12 +27,17 @@ class BpeProcessor():
 
     def decode(self, tokens):
         decoded_tokens = []
+        value_token_cache = []
         for token in tokens:
             if ast_sequence.Token.is_value(token):
-                decoded_token = self._model.decode(token, out_type=str)
-                decoded_tokens.append(decoded_token if decoded_token != self.NEW_LINE_TOKEN else '\n')
+                value_token_cache.append(token)
             else:
+                if value_token_cache:
+                    decoded_tokens.append(self._model.decode(value_token_cache).replace(self.NEW_LINE_TOKEN, '\n'))
+                    value_token_cache = []
                 decoded_tokens.append(token)
+        if value_token_cache:
+            decoded_tokens.append(self._model.decode(value_token_cache).replace(self.NEW_LINE_TOKEN, '\n'))
         return decoded_tokens
 
     @staticmethod
