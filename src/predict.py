@@ -2,6 +2,9 @@ import torch
 
 
 class ThenSectionPredictor():
+    class MaxLengthExceeded(Exception):
+        pass
+
     def __init__(self, model, sos_index, eos_index, max_length):
         self._model = model
         self._sos_index = sos_index
@@ -10,10 +13,11 @@ class ThenSectionPredictor():
 
     def predict(self, test_declaration_sequence):
         # TODO use final output or construct sentence out of [-1] of each outputs?
-        # TODO how to handle sequences which are too long
         test_declaration_tensor = torch.tensor(test_declaration_sequence).to(self._model.device)
         prediction = [self._sos_index]
-        while prediction[-1] != self._eos_index and len(prediction) < self._max_length:
+        while prediction[-1] != self._eos_index:
+            if len(prediction) >= self._max_length:
+                raise ThenSectionPredictor.MaxLengthExceeded()
             prediction.append(self._forward(test_declaration_tensor, prediction))
         return prediction[1:-1]
 
