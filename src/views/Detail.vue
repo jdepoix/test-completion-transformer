@@ -122,6 +122,30 @@
               </div>
             </div>
           </div>
+
+          <div class="accordion" id="transformerPredictionAccordion" v-if="testFileRaw !== null && relatedFileRaw !== null">
+            <div class="card">
+              <div class="card-header p-1 clickable">
+                <button class="btn btn-block text-left font-weight-bold" type="button" data-toggle="collapse" data-target="#collapseTransformerPredictionAccordion" @click="loadTransformerPrediction()">
+                  Transformer
+                </button>
+              </div>
+              <div id="collapseTransformerPredictionAccordion" class="collapse" data-parent="#transformerPredictionAccordion">
+                <div class="card-body" v-if="testRelation.then_section.includes(`${this.testRelation.related_method}(`)">
+                  <span class="font-technical">WHEN call in THEN section!</span>
+                </div>
+                <div class="card-body p-0" v-else-if="transformerPrediction != null && transformerPrediction.status == 'SUCCESS'">
+                  <pre v-highlight-syntax class="m-0"><code class="java" v-html="transformerPrediction.data"></code></pre>
+                </div>
+                <div class="card-body" v-else-if="transformerPrediction != null">
+                  <span class="font-technical">Prediction failed with {{ transformerPrediction.data }}</span>
+                </div>
+                <div class="card-body" v-else>
+                  <span class="font-technical">LOADING ...</span>
+                </div>
+              </div>
+            </div>
+          </div>
         </div>
         
       </div>
@@ -134,6 +158,7 @@ import hash from 'object-hash';
 import testRelationApi from '../core/test-relation-api.js';
 import repoFileApi from '../core/repo-file-api';
 import slmPredictionApi from '../core/slm-prediction-api';
+import transformerPredictionApi from '../core/transformer-prediction-api';
 import HighlightSyntax from '../directives/highlight-syntax.js';
 
 export default {
@@ -141,9 +166,12 @@ export default {
   data: () => ({
     testRelation: null,
     testFile: null,
+    testFileRaw: null,
     relatedFile: null,
+    relatedFileRaw: null,
     context: null,
     slmPrediction: null,
+    transformerPrediction: null,
   }),
   directives: {
     HighlightSyntax: new HighlightSyntax()
@@ -168,12 +196,14 @@ export default {
     _loadFiles() {
       this.getHighlightedFileContent(`${this.testRelation.repo_name}/${this.testRelation.test_file_path}`).then(
         fileContent => {
+          this.testFileRaw = fileContent;
           this.testFile = this.highlightRelevantCodePart(fileContent, this.testRelation.test_method_signature.trim());
         }
       );
       if (this.testRelation.related_file_path) {
         this.getHighlightedFileContent(`${this.testRelation.repo_name}/${this.testRelation.related_file_path}`).then(
           fileContent => {
+            this.relatedFileRaw = fileContent;
             this.relatedFile = this.highlightRelevantCodePart(fileContent, this.testRelation.related_method_signature.trim());
           }
         );
@@ -222,7 +252,24 @@ export default {
           .getPrediction(`@Test public void ${this.testRelation.test_method}() { ${this.testRelation.given_section.split('\n').join(' ')} ?? }`)
           .then(
             response => this.slmPrediction = response
-          )
+          );
+      }
+    },
+    loadTransformerPrediction() {
+      if (!this.transformerPrediction && !this.testRelation.then_section.includes(`${this.testRelation.related_method}(`)) {
+        transformerPredictionApi.getPrediction(
+          'default',
+          this.testFileRaw,
+          this.testRelation.test_class,
+          this.testRelation.test_method_signature,
+          this.relatedFileRaw,
+          this.testRelation.related_class,
+          this.testRelation.related_method_signature,
+        ).then(
+          response => {
+            this.transformerPrediction = response;
+          }
+        );
       }
     }
   }
