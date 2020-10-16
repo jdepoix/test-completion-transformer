@@ -1,25 +1,45 @@
-from socket import socket, AF_INET, SOCK_STREAM
-import json
+import os
+
+from flask import Flask, request, jsonify
+from flask_cors import CORS
+
+from ast_sequentialization_api_client import AstSequentializationApiClient
+from model import GwtSectionPredictionTransformer
+from data import Vocab
+from bpe import BpeProcessor
+from predict import PredictionPipeline, ThenSectionPredictor
+
+app = Flask(__name__)
+cors = CORS(app)
 
 
-class AstSequentializationApiClient():
-    class ApiError(Exception):
-        pass
-
-    class _Status():
+class PredictionApi():
+    class Status():
+        SUCCESS = 'SUCCESS'
         ERROR = 'ERROR'
-        SUCESS = 'SUCCESSFUL'
 
-    class _Command():
-        CREATE_TEST_DECLARATION_SEQUENCE = 'CREATE_TEST_DECLARATION_SEQUENCE'
-        THEN_SEQUENCE_TO_CODE = 'THEN_SEQUENCE_TO_CODE'
+    def __init__(self, data_dir, model_dir, max_prediction_length):
+        bpe_processor = BpeProcessor(f'{data_dir}/model/ast_values.model')
+        vocab = Vocab(f'{data_dir}/data/bpe_ast_vocab.txt')
+        sequentialization_client = AstSequentializationApiClient('localhost', 5555)
+        self._predictors = {
+            model_file.split('.ckpt')[0]: PredictionPipeline(
+                ThenSectionPredictor(
+                    GwtSectionPredictionTransformer.load_from_checkpoint(f'{model_dir}/{model_file}'),
+                    vocab.get_index(vocab.SOS_TOKEN),
+                    vocab.get_index(vocab.EOS_TOKEN),
+                    max_prediction_length,
+                ),
+                bpe_processor,
+                vocab,
+                sequentialization_client
+            )
+            for model_file in os.listdir(model_dir) if model_file.endswith('.ckpt')
+        }
 
-    def __init__(self, address, port):
-        self._address = address
-        self._port = port
-
-    def create_test_declaration_sequence(
+    def predict(
         self,
+        model_name,
         test_file_content,
         test_class_name,
         test_method_signature,
@@ -27,47 +47,39 @@ class AstSequentializationApiClient():
         related_class_name,
         related_method_signature,
     ):
-        return self._send_message({
-            'command': self._Command.CREATE_TEST_DECLARATION_SEQUENCE,
-            'data': {
-                'testFileContent': test_file_content,
-                'testClassName': test_class_name,
-                'testMethodSignature': test_method_signature,
-                'relatedFileContent': related_file_content,
-                'relatedClassName': related_class_name,
-                'relatedMethodSignature': related_method_signature,
-            }
-        })
-
-    def parse_then_sequence_to_code(self, sequence):
-        return self._send_message({
-            'command': self._Command.THEN_SEQUENCE_TO_CODE,
-            'data': sequence
-        })
-
-    def _open_socket(self):
-        s = socket(AF_INET, SOCK_STREAM)
-        s.connect((self._address, self._port))
-        return s
-
-    def _send_message(self, message):
-        s = self._open_socket()
         try:
-            s.send(f'{json.dumps(message)}\n'.encode())
-            response = json.loads(self._receive_all(s, 4096))
-            if (
-                response.get('status', self._Status.ERROR) != self._Status.SUCESS
-                or 'data' not in response
-            ):
-                raise AstSequentializationApiClient.ApiError()
-            return response['data']
-        finally:
-            s.close()
+            return {
+                'status': PredictionApi.Status.SUCCESS,
+                'data': self._predictors[model_name].predict(
+                    test_file_content,
+                    test_class_name,
+                    test_method_signature,
+                    related_file_content,
+                    related_class_name,
+                    related_method_signature,
+                )
+            }
+        except Exception as exception:
+            return {
+                'status': PredictionApi.Status.ERROR,
+                'data': type(exception).__name__
+            }
 
-    def _receive_all(self, sock, buffer_size):
-        response = b''
-        while True:
-            chunk = sock.recv(buffer_size)
-            response += chunk
-            if len(chunk) < buffer_size:
-                return response.decode()
+
+api = PredictionApi(os.environ['DATA_DIR'], os.environ['MODEL_DIR'], 512)
+
+
+@app.route('/api/predictions/<model_name>', methods=('POST',))
+def get_test_relation(model_name):
+    data = request.json
+    return jsonify(
+        api.predict(
+            model_name,
+            data['testFileContent'],
+            data['testClassName'],
+            data['testMethodSignature'],
+            data['relatedFileContent'],
+            data['relatedClassName'],
+            data['relatedMethodSignature'],
+        )
+    )

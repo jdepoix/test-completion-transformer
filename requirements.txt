@@ -1,5 +1,7 @@
 torch
 pytorch-lightning==0.9.0
-tensorboard
+tensorboard==2.2.0
 sentencepiece
 unidecode
+flask
+flask-cors
