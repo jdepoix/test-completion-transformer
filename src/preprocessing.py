@@ -88,7 +88,10 @@ def create_encoded_dataset_split(data_split_dir_path, bpe_dataset_path, vocab_pa
             open(bpe_dataset_path) as dataset_file, \
             open(f'{data_split_dir_path}/train.jsonl', 'w+') as train_data_file, \
             open(f'{data_split_dir_path}/validate.jsonl', 'w+') as validate_data_file, \
-            open(f'{data_split_dir_path}/test.jsonl', 'w+') as test_data_file:
+            open(f'{data_split_dir_path}/test.jsonl', 'w+') as test_data_file, \
+            open(f'{data_split_dir_path}/train.ids.jsonl', 'w+') as train_data_ids_file, \
+            open(f'{data_split_dir_path}/validate.ids.jsonl', 'w+') as validate_data_ids_file, \
+            open(f'{data_split_dir_path}/test.ids.jsonl', 'w+') as test_data_ids_file:
         line_counter = 0
         for json_line in dataset_file:
             json_data = json.loads(json_line)
@@ -99,10 +102,13 @@ def create_encoded_dataset_split(data_split_dir_path, bpe_dataset_path, vocab_pa
 
             if line_counter in train_lines:
                 train_data_file.write(data)
+                train_data_ids_file.write(json_data['id'] + '\n')
             elif line_counter in validation_lines:
                 validate_data_file.write(data)
+                validate_data_ids_file.write(json_data['id'] + '\n')
             else:
                 test_data_file.write(data)
+                test_data_ids_file.write(json_data['id'] + '\n')
 
             line_counter += 1
 
