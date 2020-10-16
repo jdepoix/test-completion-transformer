@@ -3,6 +3,8 @@ import os
 from flask import Flask, request, jsonify
 from flask_cors import CORS
 
+import torch
+
 from ast_sequentialization_api_client import AstSequentializationApiClient
 from model import GwtSectionPredictionTransformer
 from data import Vocab
@@ -22,10 +24,12 @@ class PredictionApi():
         bpe_processor = BpeProcessor(f'{data_dir}/model/ast_values.model')
         vocab = Vocab(f'{data_dir}/data/bpe_ast_vocab.txt')
         sequentialization_client = AstSequentializationApiClient('localhost', 5555)
+        device = 'cuda' if torch.cuda.is_available() else 'cpu'
+        # TODO model to cuda if available
         self._predictors = {
             model_file.split('.ckpt')[0]: PredictionPipeline(
                 ThenSectionPredictor(
-                    GwtSectionPredictionTransformer.load_from_checkpoint(f'{model_dir}/{model_file}'),
+                    GwtSectionPredictionTransformer.load_from_checkpoint(f'{model_dir}/{model_file}').to(device),
                     vocab.get_index(vocab.SOS_TOKEN),
                     vocab.get_index(vocab.EOS_TOKEN),
                     max_prediction_length,
