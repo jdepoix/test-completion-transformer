@@ -29,6 +29,9 @@ class ThenSectionPredictor():
 
 
 class PredictionPipeline():
+    class ContainsUnknownToken(Exception):
+        pass
+
     def __init__(self, predictor, bpe_processor, vocab, sequentialization_client):
         self._predictor = predictor
         self._bpe_processor = bpe_processor
@@ -56,5 +59,7 @@ class PredictionPipeline():
         input = self._vocab.encode(encoded_sequence)
         prediction = self._predictor.predict(input)
         decoded_prediction = self._vocab.decode(prediction)
+        if self._bpe_processor.UNKOWN_TOKEN in decoded_prediction:
+            raise PredictionPipeline.ContainsUnknownToken()
         decoded_sequence = self._bpe_processor.decode(decoded_prediction)
         return self._sequentialization_client.parse_then_sequence_to_code(decoded_sequence)
