@@ -20,6 +20,7 @@ class View(ABC):
             random_order=True,
             where={
                 'gwt_resolution_status': 'RESOLVED',
+                'when_location': 'GIVEN',
             }
         )[0]
 
