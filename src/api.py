@@ -1,4 +1,5 @@
 import os
+import traceback
 
 from flask import Flask, request, jsonify
 from flask_cors import CORS
@@ -25,7 +26,6 @@ class PredictionApi():
         vocab = Vocab(f'{data_dir}/data/bpe_ast_vocab.txt')
         sequentialization_client = AstSequentializationApiClient('localhost', 5555)
         device = 'cuda' if torch.cuda.is_available() else 'cpu'
-        # TODO model to cuda if available
         self._predictors = {
             model_file.split('.ckpt')[0]: PredictionPipeline(
                 ThenSectionPredictor(
@@ -64,6 +64,7 @@ class PredictionApi():
                 )
             }
         except Exception as exception:
+            traceback.print_exc()
             return {
                 'status': PredictionApi.Status.ERROR,
                 'data': type(exception).__name__
