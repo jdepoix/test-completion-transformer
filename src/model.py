@@ -56,6 +56,7 @@ class GwtSectionPredictionTransformer(pl.LightningModule):
         transformer_dropout,
     ):
         super().__init__()
+        self.max_sequence_length = max_sequence_length
         self.criterion = nn.CrossEntropyLoss(ignore_index=padding_token_idx)
         self.learning_rate = learning_rate
 

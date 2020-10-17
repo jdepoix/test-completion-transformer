@@ -41,8 +41,11 @@ def bpe_encode_dataset(
     encoded_dataset_path,
     max_source_seq_length=None,
     max_target_seq_length=None,
+    log_interval=1000,
 ):
     bpe_processor = BpeProcessor(model_path)
+    visited = set()
+    counter = 0
     with open(dataset_path) as dataset_file, open(encoded_dataset_path, 'w+') as output_dataset:
         for json_line in dataset_file:
             datapoint = json.loads(json_line)
@@ -52,6 +55,10 @@ def bpe_encode_dataset(
                 (max_source_seq_length is None or len(source_seq) <= max_source_seq_length)
                 and (max_target_seq_length is None or len(target_seq) <= max_target_seq_length)
             ):
+                unique_data = (tuple(source_seq), tuple(target_seq))
+                if unique_data in visited:
+                    continue
+
                 output_dataset.write(json.dumps({
                     'id': datapoint['id'],
                     'src': source_seq,
@@ -60,6 +67,12 @@ def bpe_encode_dataset(
                     'testCtxCount': datapoint['testCtxCount'],
                     'ctxCount': datapoint['ctxCount'],
                 }, separators=(',', ':')) + '\n')
+
+                visited.add(unique_data)
+                counter += 1
+
+                if counter % log_interval == 0:
+                    print(f'- Finished with item {counter}')
 
 
 def create_encoded_dataset_split(data_split_dir_path, bpe_dataset_path, vocab_path, data_split):
