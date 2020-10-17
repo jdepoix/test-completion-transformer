@@ -5,3 +5,4 @@ venv
 lightning_logs
 data
 upload.sh
+forward_ports.sh
