@@ -26,6 +26,7 @@ class AstSequentializationApiClient():
         related_file_content,
         related_class_name,
         related_method_signature,
+        then_section_start_index=None,
     ):
         return self._send_message({
             'command': self._Command.CREATE_TEST_DECLARATION_SEQUENCE,
@@ -36,6 +37,7 @@ class AstSequentializationApiClient():
                 'relatedFileContent': related_file_content,
                 'relatedClassName': related_class_name,
                 'relatedMethodSignature': related_method_signature,
+                'thenSectionStartIndex': then_section_start_index,
             }
         })
 

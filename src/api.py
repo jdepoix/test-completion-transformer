@@ -50,6 +50,7 @@ class PredictionApi():
         related_file_content,
         related_class_name,
         related_method_signature,
+        then_section_start_index,
     ):
         try:
             return {
@@ -61,6 +62,7 @@ class PredictionApi():
                     related_file_content,
                     related_class_name,
                     related_method_signature,
+                    then_section_start_index,
                 )
             }
         except Exception as exception:
@@ -86,5 +88,6 @@ def get_test_relation(model_name):
             data['relatedFileContent'],
             data['relatedClassName'],
             data['relatedMethodSignature'],
+            data.get('thenSectionStartIndex'),
         )
     )

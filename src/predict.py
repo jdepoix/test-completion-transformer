@@ -52,6 +52,7 @@ class PredictionPipeline():
         related_file_content,
         related_class_name,
         related_method_signature,
+        then_section_start_index=None,
     ):
         test_declaration_sequence = self._sequentialization_client.create_test_declaration_sequence(
             test_file_content,
@@ -60,6 +61,7 @@ class PredictionPipeline():
             related_file_content,
             related_class_name,
             related_method_signature,
+            then_section_start_index,
         )
         encoded_sequence = self._bpe_processor.encode(test_declaration_sequence)
         input = self._vocab.encode(encoded_sequence)
