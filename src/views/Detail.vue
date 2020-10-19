@@ -23,7 +23,7 @@
 
         <div class="col-12 mb-4" v-if="relatedFile">
           <h2>Code under test</h2>
-          <div class="accordion" id="relatedFileAccordion">
+          <div class="accordion mt-2" id="relatedFileAccordion">
             <div class="card">
               <div class="card-header p-1 clickable">
                 <button class="btn btn-block text-left font-technical" type="button" data-toggle="collapse" data-target="#collapseRelatedFile" @click="scrollHighlightedMethodIntoView('collapseRelatedFile')">
@@ -41,7 +41,7 @@
         
         <div class="col-12 mb-4" v-if="testFile">
           <h2>Test code</h2>
-          <div class="accordion" id="testFileAccordion">
+          <div class="accordion mt-2" id="testFileAccordion">
             <div class="card">
               <div class="card-header p-1 clickable">
                 <button class="btn btn-block text-left font-technical" type="button" data-toggle="collapse" data-target="#collapseTestFile" @click="scrollHighlightedMethodIntoView('collapseTestFile')">
@@ -104,7 +104,7 @@
 
         <div class="col-12 mb-4" v-if="testRelation.gwt_resolution_status === 'RESOLVED'">
           <h2>Predictions</h2>
-          <div class="accordion" id="slmPredictionAccordion">
+          <div class="accordion mt-4" id="slmPredictionAccordion">
             <div class="card">
               <div class="card-header p-1 clickable">
                 <button class="btn btn-block text-left font-weight-bold" type="button" data-toggle="collapse" data-target="#collapseSlmPredictionAccordion" @click="loadSlmPrediction()">
@@ -123,7 +123,7 @@
             </div>
           </div>
 
-          <div class="accordion" id="transformerPredictionAccordion" v-if="testFileRaw !== null && relatedFileRaw !== null">
+          <div class="accordion mt-4" id="transformerPredictionAccordion" v-if="testFileRaw !== null && relatedFileRaw !== null">
             <div class="card">
               <div class="card-header p-1 clickable">
                 <button class="btn btn-block text-left font-weight-bold" type="button" data-toggle="collapse" data-target="#collapseTransformerPredictionAccordion" @click="loadTransformerPrediction()">
