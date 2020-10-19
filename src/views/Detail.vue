@@ -265,6 +265,7 @@ export default {
           this.relatedFileRaw,
           this.testRelation.related_class,
           this.testRelation.related_method_signature,
+          this.testRelation.then_section_start_index,
         ).then(
           response => {
             this.transformerPrediction = response;
