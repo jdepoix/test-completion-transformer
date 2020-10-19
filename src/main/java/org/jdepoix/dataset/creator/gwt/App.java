@@ -1,6 +1,7 @@
 package org.jdepoix.dataset.creator.gwt;
 
 import org.jdepoix.dataset.ast.TestDeclarationCreator;
+import org.jdepoix.dataset.ast.ThenSectionExtractor;
 import org.jdepoix.dataset.ast.serialization.ASTSequentializer;
 import org.jdepoix.dataset.ast.serialization.ASTSerializer;
 import org.jdepoix.dataset.config.ResultDirConfig;
@@ -50,6 +51,7 @@ public class App {
             new GWTDatapointCreator(
                 config,
                 new TestDeclarationCreator(),
+                new ThenSectionExtractor(),
                 new ASTSerializer(),
                 new ASTSequentializer()
             ),

@@ -6,6 +6,7 @@ import com.github.javaparser.ast.body.MethodDeclaration;
 import org.jdepoix.dataset.ast.AstUtils;
 import org.jdepoix.dataset.ast.DefaultParser;
 import org.jdepoix.dataset.ast.TestDeclarationCreator;
+import org.jdepoix.dataset.ast.ThenSectionExtractor;
 import org.jdepoix.dataset.ast.node.TestDeclaration;
 import org.jdepoix.dataset.ast.serialization.ASTSequentializer;
 import org.jdepoix.dataset.ast.serialization.ASTSerializer;
@@ -21,6 +22,7 @@ class MessageData {
     public String relatedFileContent;
     public String relatedClassName;
     public String relatedMethodSignature;
+    public Integer thenSectionStartIndex;
 }
 
 class CreateTestDeclarationSequenceCommand implements Command {
@@ -32,6 +34,9 @@ class CreateTestDeclarationSequenceCommand implements Command {
             messageData.testClassName,
             messageData.testMethodSignature
         );
+        if (messageData.thenSectionStartIndex != null) {
+            new ThenSectionExtractor().extract(testMethod, messageData.thenSectionStartIndex);
+        }
         final MethodDeclaration relatedMethod = parseMethod(
             messageData.relatedFileContent,
             messageData.relatedClassName,

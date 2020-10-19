@@ -6,6 +6,7 @@ import com.github.javaparser.ast.stmt.Statement;
 import org.jdepoix.dataset.ast.AstUtils;
 import org.jdepoix.dataset.ast.DefaultParser;
 import org.jdepoix.dataset.ast.TestDeclarationCreator;
+import org.jdepoix.dataset.ast.ThenSectionExtractor;
 import org.jdepoix.dataset.ast.node.*;
 import org.jdepoix.dataset.ast.serialization.ASTSequentializer;
 import org.jdepoix.dataset.ast.serialization.ASTSerializer;
@@ -21,17 +22,20 @@ import java.util.stream.Collectors;
 public class GWTDatapointCreator implements DatapointCreator<GWTDatapoint> {
     private final ResultDirConfig config;
     private final TestDeclarationCreator testDeclarationCreator;
+    private final ThenSectionExtractor thenSectionExtractor;
     private final ASTSerializer astSerializer;
     private final ASTSequentializer astSequentializer;
 
     public GWTDatapointCreator(
         ResultDirConfig config,
         TestDeclarationCreator testDeclarationCreator,
+        ThenSectionExtractor thenSectionExtractor,
         ASTSerializer astSerializer,
         ASTSequentializer astSequentializer
     ) {
         this.config = config;
         this.testDeclarationCreator = testDeclarationCreator;
+        this.thenSectionExtractor = thenSectionExtractor;
         this.astSerializer = astSerializer;
         this.astSequentializer = astSequentializer;
     }
@@ -41,8 +45,9 @@ public class GWTDatapointCreator implements DatapointCreator<GWTDatapoint> {
         final MethodDeclaration testMethod = parseTestMethod(entry);
         final MethodDeclaration relatedMethod = parseRelatedMethod(entry);
 
-        final NodeList<Statement> thenSection = this.substituteThenSection(
-            testMethod, entry.getThenSectionStartIndex().get()
+        final NodeList<Statement> thenSection = this.thenSectionExtractor.extract(
+            testMethod,
+            entry.getThenSectionStartIndex().get()
         );
 
         final TestDeclaration testDeclaration = this.testDeclarationCreator.create(testMethod, relatedMethod);
@@ -88,15 +93,5 @@ public class GWTDatapointCreator implements DatapointCreator<GWTDatapoint> {
             entry.getTestMethodClassName(),
             entry.getTestMethodSignature()
         );
-    }
-
-    private NodeList<Statement> substituteThenSection(MethodDeclaration testMethod, int thenSectionStartIndex) {
-        final NodeList<Statement> statements = testMethod.getBody().get().getStatements();
-        List<Statement> thenStatements = new ArrayList<>();
-        while (statements.size() > thenSectionStartIndex) {
-            thenStatements.add(statements.remove(thenSectionStartIndex));
-        }
-
-        return new NodeList<>(thenStatements);
     }
 }
