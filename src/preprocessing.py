@@ -102,9 +102,9 @@ def create_encoded_dataset_split(data_split_dir_path, bpe_dataset_path, vocab_pa
             open(f'{data_split_dir_path}/train.jsonl', 'w+') as train_data_file, \
             open(f'{data_split_dir_path}/validate.jsonl', 'w+') as validate_data_file, \
             open(f'{data_split_dir_path}/test.jsonl', 'w+') as test_data_file, \
-            open(f'{data_split_dir_path}/train.ids.jsonl', 'w+') as train_data_ids_file, \
-            open(f'{data_split_dir_path}/validate.ids.jsonl', 'w+') as validate_data_ids_file, \
-            open(f'{data_split_dir_path}/test.ids.jsonl', 'w+') as test_data_ids_file:
+            open(f'{data_split_dir_path}/train_ids.txt', 'w+') as train_data_ids_file, \
+            open(f'{data_split_dir_path}/validate_ids.txt', 'w+') as validate_data_ids_file, \
+            open(f'{data_split_dir_path}/test_ids.txt', 'w+') as test_data_ids_file:
         line_counter = 0
         for json_line in dataset_file:
             json_data = json.loads(json_line)
@@ -124,6 +124,41 @@ def create_encoded_dataset_split(data_split_dir_path, bpe_dataset_path, vocab_pa
                 test_data_ids_file.write(json_data['id'] + '\n')
 
             line_counter += 1
+
+
+def encoded_predefined_dataset_split(data_split_dir_path, bpe_dataset_path, vocab_path):
+    with \
+            open(f'{data_split_dir_path}/train.ids.txt', 'w+') as train_data_file, \
+            open(f'{data_split_dir_path}/validate.ids.txt', 'w+') as validate_data_file, \
+            open(f'{data_split_dir_path}/test.ids.txt', 'w+') as test_data_file:
+        train_ids = train_data_file.readlines()
+        validate_ids = validate_data_file.readlines()
+        test_ids = test_data_file.readlines()
+
+    vocab = Vocab(vocab_path)
+    sos_index = vocab.get_index(Vocab.SOS_TOKEN)
+    eos_index = vocab.get_index(Vocab.EOS_TOKEN)
+
+    with \
+            open(bpe_dataset_path) as dataset_file, \
+            open(f'{data_split_dir_path}/train.jsonl', 'w+') as train_data_file, \
+            open(f'{data_split_dir_path}/validate.jsonl', 'w+') as validate_data_file, \
+            open(f'{data_split_dir_path}/test.jsonl', 'w+') as test_data_file:
+        for json_line in dataset_file:
+            json_data = json.loads(json_line)
+            data = json.dumps([
+                [vocab.get_index(token) for token in json_data['src']],
+                [sos_index] + [vocab.get_index(token) for token in json_data['trgTok']] + [eos_index],
+            ], separators=(',', ':')) + '\n'
+
+            if json_data['id'] in train_ids:
+                train_data_file.write(data)
+            elif json_data['id'] in validate_ids:
+                validate_data_file.write(data)
+            elif json_data['id'] in test_ids:
+                test_data_file.write(data)
+            else:
+                raise ValueError(f'id {json_data["id"]} is not part of any of the splits')
 
 
 def get_file_length(path):
