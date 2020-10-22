@@ -11,27 +11,11 @@ def get_parser():
     parser = ArgumentParser()
     parser.add_argument('--dataset_base_path', type=str, required=True)
     parser.add_argument('--tensorboard_dir', type=str, default='lightning_logs')
+    parser.add_argument('--invalidate_line_caches', type=bool, default=False)
     return parser
 
 
 def train(args):
-    # TODO implement invalidate-dataset-cache param
-    # TODO pin pytorch lightning version
-    # TODO UserWarning: Could not log computational graph since the `model.example_input_array` attribute is not set or `input_array` was not given
-    #   warnings.warn(*args, **kwargs)
-
-    # TODO
-    # Exception ignored in: <Finalize object, dead>
-    # Traceback (most recent call last):
-    #   File "/opt/conda/lib/python3.7/multiprocessing/util.py", line 201, in __call__
-    #     res = self._callback(*self._args, **self._kwargs)
-    #   File "/opt/conda/lib/python3.7/multiprocessing/synchronize.py", line 87, in _cleanup
-    #     sem_unlink(name)
-    # FileNotFoundError: [Errno 2] No such file or directory
-
-    # TODO
-    # RuntimeError: could not unlink the shared memory file
-
     data_module = GwtDataModule(
         args.batch_size,
         args.num_dataset_workers,
@@ -40,6 +24,9 @@ def train(args):
         f'{args.dataset_base_path}/bpe_ast_split/test.jsonl',
         f'{args.dataset_base_path}/bpe_ast_vocab.txt',
     )
+
+    if args.invalidate_line_caches:
+        data_module.invalidate_caches()
 
     model = GwtSectionPredictionTransformer(
         data_module.vocab.get_size(),

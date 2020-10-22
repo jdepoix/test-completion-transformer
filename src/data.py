@@ -56,6 +56,7 @@ class LineCachedFile():
     def __init__(self, path):
         self._path = path
         self._new_line_indices = self._load_line_indices()
+        self._linecache_path = f'{self._path}.linecache'
 
     def get_total_line_count(self):
         return len(self._new_line_indices)
@@ -65,14 +66,17 @@ class LineCachedFile():
             file.seek(self._new_line_indices[number])
             return file.readline()
 
+    def invalidate_cache(self):
+        if os.path.exists(self._linecache_path):
+            os.remove(self._linecache_path)
+
     def _load_line_indices(self):
-        cache_file_path = f'{self._path}.linecache'
-        if os.path.exists(cache_file_path):
-            with open(cache_file_path) as cache_file:
+        if os.path.exists(self._linecache_path):
+            with open(self._linecache_path) as cache_file:
                 return json.loads(cache_file.read())
 
         cache = self._create_line_cache()
-        with open(cache_file_path, 'w+') as cache_file:
+        with open(self._linecache_path, 'w+') as cache_file:
             cache_file.write(json.dumps(cache, separators=(',', ':')))
         return cache
 
@@ -96,6 +100,9 @@ class GwtDataset(Dataset):
     def __getitem__(self, item):
         src, trg = json.loads(self._dataset_file.get_line(item))
         return torch.tensor(src), torch.tensor(trg)
+
+    def invalidate_cache(self):
+        self._dataset_file.invalidate_cache()
 
 
 class GwtDataModule(LightningDataModule):
@@ -161,3 +168,11 @@ class GwtDataModule(LightningDataModule):
             collate_fn=self._batch_padder.create_batch,
             num_workers=self._num_worker,
         )
+
+    def invalidate_caches(self):
+        if self._train_dataset:
+            self._train_dataset.invalidate_cache()
+        if self._validation_dataset:
+            self._validation_dataset.invalidate_cache()
+        if self._test_dataset:
+            self._test_dataset.invalidate_cache()
