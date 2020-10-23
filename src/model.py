@@ -12,6 +12,8 @@ class PositionalEncoding(nn.Module):
     def __init__(self, features_size, max_len, dropout=0.1):
         super(PositionalEncoding, self).__init__()
         self.dropout = nn.Dropout(p=dropout)
+        # TODO add device here
+        # TODO check to() vs init on device
 
         pe = torch.zeros(max_len, features_size)
         position = torch.arange(0, max_len, dtype=torch.float).unsqueeze(1)
@@ -106,22 +108,18 @@ class GwtSectionPredictionTransformer(pl.LightningModule):
 
     def training_step(self, batch, batch_idx):
         loss = self._get_forward_loss(batch)
-        result = pl.TrainResult(loss)
-        result.log('train_loss', loss)
-        return result
+        self.log('train_loss', loss)
+        return loss
 
     def validation_step(self, batch, batch_idx):
-        # TODO use predictor for validation?
         loss = self._get_forward_loss(batch)
-        result = pl.EvalResult(checkpoint_on=loss)
-        result.log('eval_loss', loss)
-        return result
+        self.log('val_loss', loss)
+        return loss
 
     def test_step(self, batch, batch_idx):
         loss = self._get_forward_loss(batch)
-        result = pl.EvalResult()
-        result.log('test_loss', loss)
-        return result
+        self.log('test_loss', loss)
+        return loss
 
     def configure_optimizers(self):
         return Adam(self.parameters(), lr=self.learning_rate)

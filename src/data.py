@@ -55,8 +55,8 @@ class BatchPadder():
 class LineCachedFile():
     def __init__(self, path):
         self._path = path
-        self._new_line_indices = self._load_line_indices()
         self._linecache_path = f'{self._path}.linecache'
+        self._new_line_indices = self._load_line_indices()
 
     def get_total_line_count(self):
         return len(self._new_line_indices)
@@ -110,7 +110,6 @@ class GwtDataModule(LightningDataModule):
     def add_dataset_specific_args(parent_parser):
         parser = ArgumentParser(parents=[parent_parser], add_help=False)
         parser.add_argument('--batch_size', type=int, default=32)
-        # TODO does it make sense to have more workers than GPUs?
         parser.add_argument('--num_dataset_workers', type=int, default=8)
         return parser
 
