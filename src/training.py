@@ -21,9 +21,7 @@ def get_parser():
     return parser
 
 
-def train(args):
-    # TODO autofit batchsize
-
+def train(args, custom_callbacks=None):
     data_module = GwtDataModule(
         args.batch_size,
         args.num_dataset_workers,
@@ -55,6 +53,7 @@ def train(args):
         args.experiment_name,
     )
     logger.log_hyperparams(args)
+
     trainer = pl.Trainer.from_argparse_args(
         args,
         logger=logger,
@@ -63,7 +62,9 @@ def train(args):
             monitor='val_loss',
             mode='min',
         ),
+        **({'callbacks': custom_callbacks} if custom_callbacks else {}),
     )
+
     trainer.fit(model, data_module)
 
 

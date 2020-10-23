@@ -4,6 +4,7 @@ from argparse import ArgumentParser
 import torch
 import torch.nn as nn
 from torch.optim.adam import Adam
+from torch.nn import functional
 
 import pytorch_lightning as pl
 
@@ -24,6 +25,27 @@ class PositionalEncoding(pl.LightningModule):
     def forward(self, x):
         x = x + self.pe[:x.size(0), :]
         return self.dropout(x)
+
+
+class LabelSmoothingLoss(pl.LightningModule):
+    def __init__(self, label_smoothing, tgt_vocab_size, ignore_index=-100):
+        assert 0.0 < label_smoothing <= 1.0
+        self.ignore_index = ignore_index
+        super(LabelSmoothingLoss, self).__init__()
+
+        smoothing_value = label_smoothing / (tgt_vocab_size - 2)
+        one_hot = torch.full((tgt_vocab_size,), smoothing_value, device=self.device)
+        one_hot[self.ignore_index] = 0
+        self.register_buffer('one_hot', one_hot.unsqueeze(0))
+
+        self.confidence = 1.0 - label_smoothing
+
+    def forward(self, output, target):
+        model_prob = self.one_hot.repeat(target.size(0), 1)
+        model_prob.scatter_(1, target.unsqueeze(1), self.confidence)
+        model_prob.masked_fill_((target == self.ignore_index).unsqueeze(1), 0)
+
+        return functional.kl_div(output, model_prob, reduction='sum')
 
 
 class GwtSectionPredictionTransformer(pl.LightningModule):
@@ -58,6 +80,7 @@ class GwtSectionPredictionTransformer(pl.LightningModule):
         super().__init__()
         self.max_sequence_length = max_sequence_length
         self.criterion = nn.CrossEntropyLoss(ignore_index=padding_token_idx)
+        self.label_smoothed_criterion = LabelSmoothingLoss(.1, vocab_size, padding_token_idx)
         self.learning_rate = learning_rate
 
         self.padding_token_idx = padding_token_idx
@@ -102,21 +125,26 @@ class GwtSectionPredictionTransformer(pl.LightningModule):
         source, target = batch
         target_in, target_out = target[:-1, :], target[1:, :]
         output = self(source, target_in)
-        return self.criterion(output.reshape(-1, output.shape[2]), target_out.reshape(-1))
+        loss_src = output.reshape(-1, output.shape[2])
+        loss_trg = target_out.reshape(-1)
+        return self.criterion(loss_src, loss_trg), self.label_smoothed_criterion(loss_src, loss_trg)
 
     def training_step(self, batch, batch_idx):
-        loss = self._get_forward_loss(batch)
+        loss, label_smoothed_loss = self._get_forward_loss(batch)
         self.log('train_loss', loss)
+        self.log('label_smoothed_train_loss', label_smoothed_loss)
         return loss
 
     def validation_step(self, batch, batch_idx):
-        loss = self._get_forward_loss(batch)
+        loss, label_smoothed_loss = self._get_forward_loss(batch)
         self.log('val_loss', loss)
+        self.log('label_smoothed_val_loss', label_smoothed_loss)
         return loss
 
     def test_step(self, batch, batch_idx):
-        loss = self._get_forward_loss(batch)
+        loss, label_smoothed_loss = self._get_forward_loss(batch)
         self.log('test_loss', loss)
+        self.log('label_smoothed_test_loss', label_smoothed_loss)
         return loss
 
     def configure_optimizers(self):
