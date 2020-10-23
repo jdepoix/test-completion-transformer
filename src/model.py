@@ -8,19 +8,17 @@ from torch.optim.adam import Adam
 import pytorch_lightning as pl
 
 
-class PositionalEncoding(nn.Module):
+class PositionalEncoding(pl.LightningModule):
     def __init__(self, features_size, max_len, dropout=0.1):
         super(PositionalEncoding, self).__init__()
         self.dropout = nn.Dropout(p=dropout)
-        # TODO add device here
-        # TODO check to() vs init on device
 
         pe = torch.zeros(max_len, features_size)
         position = torch.arange(0, max_len, dtype=torch.float).unsqueeze(1)
         div_term = torch.exp(torch.arange(0, features_size, 2).float() * (-math.log(10000.0) / features_size))
         pe[:, 0::2] = torch.sin(position * div_term)
         pe[:, 1::2] = torch.cos(position * div_term)
-        pe = pe.unsqueeze(0).transpose(0, 1)
+        pe = pe.unsqueeze(0).transpose(0, 1).to(self.device)
         self.register_buffer('pe', pe)
 
     def forward(self, x):
