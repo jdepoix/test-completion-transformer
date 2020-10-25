@@ -29,7 +29,7 @@ class ThenSectionPredictor():
 
     def _forward(self, source, previous_predictions):
         with torch.no_grad():
-            target = torch.tensor(previous_predictions).to(source.device)
+            target = torch.tensor(previous_predictions).type_as(source)
             output = self._model(source.unsqueeze(1), target.unsqueeze(1))
             return output[-1].argmax().item()
 

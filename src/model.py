@@ -19,7 +19,7 @@ class PositionalEncoding(pl.LightningModule):
         div_term = torch.exp(torch.arange(0, features_size, 2).float() * (-math.log(10000.0) / features_size))
         pe[:, 0::2] = torch.sin(position * div_term)
         pe[:, 1::2] = torch.cos(position * div_term)
-        pe = pe.unsqueeze(0).transpose(0, 1).to(self.device)
+        pe = pe.unsqueeze(0).transpose(0, 1)
         self.register_buffer('pe', pe)
 
     def forward(self, x):
@@ -111,7 +111,7 @@ class GwtSectionPredictionTransformer(pl.LightningModule):
             embedded_src,
             embedded_target,
             src_key_padding_mask=src_key_padding_mask,
-            tgt_mask=self.transformer.generate_square_subsequent_mask(target.shape[0]).to(src.device),
+            tgt_mask=self.transformer.generate_square_subsequent_mask(target.shape[0]).type_as(src),
             tgt_key_padding_mask=target_key_padding_mask,
             memory_key_padding_mask=src_key_padding_mask.clone(),
         )
