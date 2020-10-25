@@ -22,6 +22,7 @@ def objective(trial):
     relevant_metric = 'val_loss'
 
     args = get_parser().parse_args()
+    args.experiment_name = 'hyperparameter_tuning'
 
     args.learning_rate = trial.suggest_categorical('learning_rate', [1e-3, 1e-4, 1e-5])
     args.embedding_size = trial.suggest_categorical('embedding_size', [512, 1024])
