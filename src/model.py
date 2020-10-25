@@ -111,7 +111,7 @@ class GwtSectionPredictionTransformer(pl.LightningModule):
             embedded_src,
             embedded_target,
             src_key_padding_mask=src_key_padding_mask,
-            tgt_mask=self.transformer.generate_square_subsequent_mask(target.shape[0]).type_as(src),
+            tgt_mask=self.transformer.generate_square_subsequent_mask(target.shape[0]).to(src.device),
             tgt_key_padding_mask=target_key_padding_mask,
             memory_key_padding_mask=src_key_padding_mask.clone(),
         )
