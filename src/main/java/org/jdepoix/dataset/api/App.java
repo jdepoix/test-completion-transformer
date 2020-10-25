@@ -4,6 +4,6 @@ import java.io.IOException;
 
 public class App {
     public static void main(String[] args) throws IOException {
-        new AstSerializationServer().run(Integer.parseInt(args[0]));
+        new AstSerializationServer(Integer.parseInt(args[0]), Integer.parseInt(args[1])).run();
     }
 }
