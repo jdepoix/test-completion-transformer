@@ -58,11 +58,11 @@ def create_data_split(database_path, output_dir, when_location, split):
 
 
 def save_splits(output_dir, id_splits):
-    with open(f'{output_dir}/train.ids.txt', 'w+') as file:
+    with open(f'{output_dir}/train_ids.txt', 'w+') as file:
         file.write('\n'.join(id_splits[0]))
-    with open(f'{output_dir}/validate.ids.txt', 'w+') as file:
+    with open(f'{output_dir}/validate_ids.txt', 'w+') as file:
         file.write('\n'.join(id_splits[1]))
-    with open(f'{output_dir}/test.ids.txt', 'w+') as file:
+    with open(f'{output_dir}/test_ids.txt', 'w+') as file:
         file.write('\n'.join(id_splits[2]))
 
 
