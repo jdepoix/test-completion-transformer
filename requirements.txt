@@ -5,3 +5,4 @@ optuna
 sentencepiece
 flask
 flask-cors
+javalang

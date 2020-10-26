@@ -5,6 +5,8 @@ import math
 
 from torch.utils.data import random_split
 
+from javalang import tokenizer
+
 import ast_sequence
 from bpe import BpeProcessor
 from data import Vocab
@@ -104,36 +106,48 @@ def create_encoded_dataset_split(data_split_dir_path, bpe_dataset_path, vocab_pa
             open(f'{data_split_dir_path}/test.jsonl', 'w+') as test_data_file, \
             open(f'{data_split_dir_path}/train_ids.txt', 'w+') as train_data_ids_file, \
             open(f'{data_split_dir_path}/validate_ids.txt', 'w+') as validate_data_ids_file, \
-            open(f'{data_split_dir_path}/test_ids.txt', 'w+') as test_data_ids_file:
+            open(f'{data_split_dir_path}/test_ids.txt', 'w+') as test_data_ids_file, \
+            open(f'{data_split_dir_path}/validate_code_tokens.jsonl', 'w+') as validate_code_tokens_file, \
+            open(f'{data_split_dir_path}/test_code_tokens.jsonl', 'w+') as test_code_tokens_file:
         line_counter = 0
         for json_line in dataset_file:
             json_data = json.loads(json_line)
+            src_data = [vocab.get_index(token) for token in json_data['src']]
             data = json.dumps([
-                [vocab.get_index(token) for token in json_data['src']],
+                src_data,
                 [sos_index] + [vocab.get_index(token) for token in json_data['trgTok']] + [eos_index],
             ], separators=(',', ':')) + '\n'
 
             if line_counter in train_lines:
                 train_data_file.write(data)
                 train_data_ids_file.write(json_data['id'] + '\n')
-            elif line_counter in validation_lines:
-                validate_data_file.write(data)
-                validate_data_ids_file.write(json_data['id'] + '\n')
             else:
-                test_data_file.write(data)
-                test_data_ids_file.write(json_data['id'] + '\n')
+                code_tokens = json.dumps(
+                    [src_data, [token.value for token in tokenizer.tokenize(json_data['trgCode'])]],
+                    separators=(',', ':')
+                ) + '\n'
+                if line_counter in validation_lines:
+                    validate_data_file.write(data)
+                    validate_data_ids_file.write(json_data['id'] + '\n')
+                    validate_code_tokens_file.write(code_tokens)
+                elif line_counter in test_lines:
+                    test_data_file.write(data)
+                    test_data_ids_file.write(json_data['id'] + '\n')
+                    test_code_tokens_file.write(code_tokens)
+                else:
+                    raise ValueError(f'id {json_data["id"]} is not part of any of the splits')
 
             line_counter += 1
 
 
 def encoded_predefined_dataset_split(data_split_dir_path, bpe_dataset_path, vocab_path):
     with \
-            open(f'{data_split_dir_path}/train.ids.txt', 'w+') as train_data_file, \
-            open(f'{data_split_dir_path}/validate.ids.txt', 'w+') as validate_data_file, \
-            open(f'{data_split_dir_path}/test.ids.txt', 'w+') as test_data_file:
-        train_ids = train_data_file.readlines()
-        validate_ids = validate_data_file.readlines()
-        test_ids = test_data_file.readlines()
+            open(f'{data_split_dir_path}/train_ids.txt') as train_data_file, \
+            open(f'{data_split_dir_path}/validate_ids.txt') as validate_data_file, \
+            open(f'{data_split_dir_path}/test_ids.txt') as test_data_file:
+        train_ids = [line[:-1] for line in train_data_file.readlines()]
+        validate_ids = [line[:-1] for line in validate_data_file.readlines()]
+        test_ids = [line[:-1] for line in test_data_file.readlines()]
 
     vocab = Vocab(vocab_path)
     sos_index = vocab.get_index(Vocab.SOS_TOKEN)
@@ -143,22 +157,32 @@ def encoded_predefined_dataset_split(data_split_dir_path, bpe_dataset_path, voca
             open(bpe_dataset_path) as dataset_file, \
             open(f'{data_split_dir_path}/train.jsonl', 'w+') as train_data_file, \
             open(f'{data_split_dir_path}/validate.jsonl', 'w+') as validate_data_file, \
-            open(f'{data_split_dir_path}/test.jsonl', 'w+') as test_data_file:
+            open(f'{data_split_dir_path}/test.jsonl', 'w+') as test_data_file, \
+            open(f'{data_split_dir_path}/validate_code_tokens.jsonl', 'w+') as validate_code_tokens_file, \
+            open(f'{data_split_dir_path}/test_code_tokens.jsonl', 'w+') as test_code_tokens_file:
         for json_line in dataset_file:
             json_data = json.loads(json_line)
+            src_data = [vocab.get_index(token) for token in json_data['src']]
             data = json.dumps([
-                [vocab.get_index(token) for token in json_data['src']],
+                src_data,
                 [sos_index] + [vocab.get_index(token) for token in json_data['trgTok']] + [eos_index],
             ], separators=(',', ':')) + '\n'
 
             if json_data['id'] in train_ids:
                 train_data_file.write(data)
-            elif json_data['id'] in validate_ids:
-                validate_data_file.write(data)
-            elif json_data['id'] in test_ids:
-                test_data_file.write(data)
             else:
-                raise ValueError(f'id {json_data["id"]} is not part of any of the splits')
+                code_tokens = json.dumps(
+                    [src_data, [token.value for token in tokenizer.tokenize(json_data['trgCode'])]],
+                    separators=(',', ':')
+                ) + '\n'
+                if json_data['id'] in validate_ids:
+                    validate_data_file.write(data)
+                    validate_code_tokens_file.write(code_tokens)
+                elif json_data['id'] in test_ids:
+                    test_data_file.write(data)
+                    test_code_tokens_file.write(code_tokens)
+                else:
+                    raise ValueError(f'id {json_data["id"]} is not part of any of the splits')
 
 
 def get_file_length(path):
@@ -170,8 +194,6 @@ def get_file_length(path):
 
 
 if __name__ == '__main__':
-    # TODO use UNK or unidecode for weird chars?
-    # TODO unidecode swallows emojis (is UNK or not having a char better...?)
     VOCAB_SIZE = 16000
 
     input_dataset_path = sys.argv[1]
