@@ -44,7 +44,7 @@ class PredictionPipeline():
         self._vocab = vocab
         self._sequentialization_client = sequentialization_client
 
-    def predict(
+    def execute(
         self,
         test_file_content,
         test_class_name,
@@ -64,8 +64,11 @@ class PredictionPipeline():
             then_section_start_index,
         )
         encoded_sequence = self._bpe_processor.encode(test_declaration_sequence)
-        input = self._vocab.encode(encoded_sequence)
-        prediction = self._predictor.predict(input)
+        model_input = self._vocab.encode(encoded_sequence)
+        return self.execute_on_encoded(model_input)
+
+    def execute_on_encoded(self, encoded_sequence):
+        prediction = self._predictor.predict(encoded_sequence)
         decoded_prediction = self._vocab.decode(prediction)
         if self._bpe_processor.UNKOWN_TOKEN in decoded_prediction:
             raise PredictionPipeline.ContainsUnknownToken()

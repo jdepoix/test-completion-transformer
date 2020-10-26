@@ -55,7 +55,7 @@ class PredictionApi():
         try:
             return {
                 'status': PredictionApi.Status.SUCCESS,
-                'data': self._predictors[model_name].predict(
+                'data': self._predictors[model_name].execute(
                     test_file_content,
                     test_class_name,
                     test_method_signature,
