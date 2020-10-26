@@ -4,5 +4,5 @@ venv
 .DS_Store
 lightning_logs
 data
-upload.sh
+deploy.sh
 forward_ports.sh
