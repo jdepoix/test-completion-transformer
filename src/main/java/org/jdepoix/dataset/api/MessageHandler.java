@@ -1,6 +1,5 @@
 package org.jdepoix.dataset.api;
 
-import com.fasterxml.jackson.core.JsonParser;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
@@ -46,12 +45,9 @@ class MessageHandler implements Runnable {
 
     @Override
     public void run() {
+        BufferedReader reader = null;
         try {
-            Thread.sleep(5000);
-        } catch (InterruptedException e) {
-            e.printStackTrace();
-        }
-        try (final BufferedReader reader = new BufferedReader(new InputStreamReader(socket.getInputStream()))) {
+            reader = new BufferedReader(new InputStreamReader(socket.getInputStream()));
             final RequestMessage requestMessage = new ObjectMapper().readValue(reader.readLine(), RequestMessage.class);
             switch (requestMessage.command) {
                 case THEN_SEQUENCE_TO_CODE:
@@ -80,12 +76,16 @@ class MessageHandler implements Runnable {
                 ioException.printStackTrace();
             }
         } finally {
+            if (reader != null) {
+                try {
+                    reader.close();
+                } catch (IOException e) {}
+            }
+
             if (!this.socket.isClosed()) {
                 try {
                     this.socket.close();
-                } catch (IOException e) {
-                    e.printStackTrace();
-                }
+                } catch (IOException e) {}
             }
         }
     }
