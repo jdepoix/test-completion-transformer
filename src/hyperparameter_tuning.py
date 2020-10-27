@@ -25,11 +25,8 @@ def objective(trial):
     args.experiment_name = 'hyperparameter_tuning'
 
     args.learning_rate = trial.suggest_categorical('learning_rate', [1e-3, 1e-4, 1e-5])
-    args.embedding_size = trial.suggest_categorical('embedding_size', [512, 1024])
-    args.num_attention_heads = trial.suggest_categorical('num_attention_heads', [4, 8, 16])
-    args.num_encoder_layers = trial.suggest_categorical('num_encoder_layers', [4, 6, 8, 10])
-    args.num_decoder_layers = trial.suggest_categorical('num_decoder_layers', [4, 6, 8, 10])
-    args.feedforward_dimensions = trial.suggest_categorical('feedforward_dimensions', [512, 1024, 2048])
+    args.lr_warmup_steps = trial.suggest_categorical('lr_warmup_steps', [500, 1000, 2000])
+    args.accumulate_grad_batches = trial.suggest_categorical('accumulate_grad_batches', [16, 32, 64, 128])
     args.positional_encoding_dropout = trial.suggest_uniform('positional_encoding_dropout', 0.1, 0.5)
     args.transformer_dropout = trial.suggest_uniform('transformer_dropout', 0.1, 0.5)
 
@@ -37,7 +34,7 @@ def objective(trial):
     train(args, custom_callbacks=[metric_callback, PyTorchLightningPruningCallback(trial, monitor=relevant_metric)])
 
     if metric_callback.most_recent_metrics is None:
-        raise ValueError('most recent metric should not be None by this point')
+        raise ValueError('most recent metric should not be None!')
 
     return metric_callback.most_recent_metrics
 

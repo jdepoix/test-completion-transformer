@@ -14,6 +14,7 @@ def get_parser():
     parser.add_argument('--tensorboard_dir', type=str, default='lightning_logs')
     parser.add_argument('--experiment_name', type=str, default='default')
     parser.add_argument('--invalidate_line_caches', action='store_true')
+    parser.add_argument('--split', type=str, default='bpe_ast_split')
 
     parser = GwtDataModule.add_dataset_specific_args(parser)
     parser = GwtSectionPredictionTransformer.add_model_specific_args(parser)
@@ -25,9 +26,9 @@ def train(args, custom_callbacks=None):
     data_module = GwtDataModule(
         args.batch_size,
         args.num_dataset_workers,
-        f'{args.dataset_base_path}/bpe_ast_split/train.jsonl',
-        f'{args.dataset_base_path}/bpe_ast_split/validate.jsonl',
-        f'{args.dataset_base_path}/bpe_ast_split/test.jsonl',
+        f'{args.dataset_base_path}/{args.split}/train.jsonl',
+        f'{args.dataset_base_path}/{args.split}/validate.jsonl',
+        f'{args.dataset_base_path}/{args.split}/test.jsonl',
         f'{args.dataset_base_path}/bpe_ast_vocab.txt',
     )
 
@@ -46,6 +47,7 @@ def train(args, custom_callbacks=None):
         args.feedforward_dimensions,
         args.positional_encoding_dropout,
         args.transformer_dropout,
+        args.lr_warmup_steps,
     )
 
     logger = loggers.TensorBoardLogger(

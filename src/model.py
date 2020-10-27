@@ -1,13 +1,37 @@
 import math
+import warnings
 from argparse import ArgumentParser
 
 import torch
 import torch.nn as nn
-from torch.optim.adam import Adam
+from torch.optim.adamw import AdamW
+from torch.optim.lr_scheduler import _LRScheduler
 from torch.nn import functional
 
 import pytorch_lightning as pl
 
+
+class InverseSquareRootLR(_LRScheduler):
+    def __init__(self, optimizer, warmup_steps, last_epoch=-1):
+        if warmup_steps <= 0:
+            raise ValueError('warmup_steps must be > 0')
+        self._warmup_steps = warmup_steps
+        self._lr_steps = [param_group['lr'] / warmup_steps for param_group in optimizer.param_groups]
+        self._decay_factors = [
+            param_group['lr'] * warmup_steps ** 0.5 for param_group in optimizer.param_groups
+        ]
+
+        super().__init__(optimizer, last_epoch)
+
+    def get_lr(self):
+        if not self._get_lr_called_within_step:
+            warnings.warn("To get the last learning rate computed by the scheduler, "
+                          "please use `get_last_lr()`.", UserWarning)
+
+        if self.last_epoch < self._warmup_steps:
+            return [self.last_epoch * lr_step for lr_step in self._lr_steps]
+        else:
+            return [decay_factor * self.last_epoch ** -0.5 for decay_factor in self._decay_factors]
 
 class PositionalEncoding(pl.LightningModule):
     def __init__(self, features_size, max_len, dropout=0.1):
@@ -61,6 +85,7 @@ class GwtSectionPredictionTransformer(pl.LightningModule):
         parser.add_argument('--feedforward_dimensions', type=int, default=2048)
         parser.add_argument('--positional_encoding_dropout', type=float, default=0.1)
         parser.add_argument('--transformer_dropout', type=float, default=0.1)
+        parser.add_argument('--lr_warmup_steps', type=int, default=4000)
         return parser
 
     def __init__(
@@ -76,6 +101,7 @@ class GwtSectionPredictionTransformer(pl.LightningModule):
         feedforward_dimensions,
         positional_encoding_dropout,
         transformer_dropout,
+        lr_warmup_steps,
     ):
         super().__init__()
         self.max_sequence_length = max_sequence_length
@@ -98,6 +124,7 @@ class GwtSectionPredictionTransformer(pl.LightningModule):
             dropout=transformer_dropout
         )
         self.fully_connected_out = nn.Linear(embedding_size, vocab_size)
+        self.lr_warmup_steps = lr_warmup_steps
         self.save_hyperparameters()
 
     def forward(self, src, target):
@@ -131,6 +158,7 @@ class GwtSectionPredictionTransformer(pl.LightningModule):
 
     def training_step(self, batch, batch_idx):
         loss, label_smoothed_loss = self._get_forward_loss(batch)
+        self.log('learning_rate', self.optimizers().param_groups[0]['lr'])
         self.log('train_loss', loss)
         self.log('label_smoothed_train_loss', label_smoothed_loss)
         return loss
@@ -148,4 +176,19 @@ class GwtSectionPredictionTransformer(pl.LightningModule):
         return loss
 
     def configure_optimizers(self):
-        return Adam(self.parameters(), lr=self.learning_rate)
+        optimizer = AdamW(self.parameters(), lr=self.learning_rate)
+        scheduler = InverseSquareRootLR(optimizer, self.lr_warmup_steps)
+        return (
+            [optimizer],
+            [
+                {
+                    'scheduler': scheduler,
+                    'interval': 'step',
+                    'frequency': 1,
+                    # TODO try this out
+                    'reduce_on_plateau': False,
+                    'monitor': 'val_loss',
+                }
+            ]
+        )
+
