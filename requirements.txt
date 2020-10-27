@@ -6,3 +6,5 @@ sentencepiece
 flask
 flask-cors
 javalang
+nltk
+rouge-metric

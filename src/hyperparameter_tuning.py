@@ -41,7 +41,7 @@ def objective(trial):
 
 def run_study():
     study = optuna.create_study(direction='minimize')
-    study.optimize(objective, n_trials=100, timeout=24 * 60 * 60)
+    study.optimize(objective, n_trials=50, timeout=24 * 60 * 60)
 
 
 if __name__ == '__main__':

@@ -1,4 +1,34 @@
 import torch
+import torch.nn.functional as F
+
+
+class NucleusSampler():
+    def __init__(self, top_p=0.9, filter_value=-float('Inf')):
+        self._top_p = top_p
+        self._filter_value = filter_value
+
+    def sample(self, logits):
+        assert logits.dim() == 1
+        # https://gist.github.com/thomwolf/1a5a29f6962089e871b94cbd09daf317
+        sorted_logits, sorted_indices = torch.sort(logits, descending=True)
+        cumulative_probs = torch.cumsum(F.softmax(sorted_logits, dim=-1), dim=-1)
+
+        # Remove tokens with cumulative probability above the threshold
+        sorted_indices_to_remove = cumulative_probs > self._top_p
+        # Shift the indices to the right to keep also the first token above the threshold
+        sorted_indices_to_remove[..., 1:] = sorted_indices_to_remove[..., :-1].clone()
+        sorted_indices_to_remove[..., 0] = 0
+
+        indices_to_remove = sorted_indices[sorted_indices_to_remove]
+        logits[indices_to_remove] = self._filter_value
+
+        probabilities = F.softmax(logits, dim=-1)
+        return torch.multinomial(probabilities, 1)
+
+
+class GreedySampler():
+    def sample(self, logits):
+        return logits.argmax().item()
 
 
 class ThenSectionPredictor():
@@ -8,14 +38,14 @@ class ThenSectionPredictor():
     class InputSequenceExceededMaxLength(Exception):
         pass
 
-    def __init__(self, model, sos_index, eos_index, max_length):
+    def __init__(self, model, sos_index, eos_index, max_length, sampler=NucleusSampler()):
         self._model = model
         self._sos_index = sos_index
         self._eos_index = eos_index
         self._max_length = max_length
+        self._sampler = sampler
 
     def predict(self, test_declaration_sequence):
-        # TODO use final output or construct sentence out of [-1] of each outputs?
         if len(test_declaration_sequence) > self._model.max_sequence_length:
             raise ThenSectionPredictor.InputSequenceExceededMaxLength()
 
@@ -24,14 +54,14 @@ class ThenSectionPredictor():
         while prediction[-1] != self._eos_index:
             if len(prediction) >= self._max_length:
                 raise ThenSectionPredictor.PredictionExceededMaxLength()
-            prediction.append(self._forward(test_declaration_tensor, prediction))
+            prediction.append(self._sampler.sample(self._forward(test_declaration_tensor, prediction)))
         return prediction[1:-1]
 
     def _forward(self, source, previous_predictions):
         with torch.no_grad():
             target = torch.tensor(previous_predictions).to(source.device)
             output = self._model(source.unsqueeze(1), target.unsqueeze(1))
-            return output[-1].argmax().item()
+            return output[-1].squeeze()
 
 
 class PredictionPipeline():
