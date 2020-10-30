@@ -2,6 +2,7 @@ import optuna
 from optuna.integration import PyTorchLightningPruningCallback
 
 import pytorch_lightning as pl
+from pytorch_lightning.callbacks import EarlyStopping
 
 from training import train, get_parser
 
@@ -15,7 +16,10 @@ class MostRecentMetricCallback(pl.Callback):
     def on_validation_end(self, trainer, pl_module):
         metric = trainer.callback_metrics.get(self._metric_name)
         if metric:
-            self.most_recent_metrics = metric.item()
+            if self.most_recent_metrics:
+                self.most_recent_metrics = min(metric.item(), self.most_recent_metrics)
+            else:
+                self.most_recent_metrics = metric.item()
 
 
 def objective(trial):
@@ -31,7 +35,20 @@ def objective(trial):
     args.transformer_dropout = trial.suggest_uniform('transformer_dropout', 0.1, 0.5)
 
     metric_callback = MostRecentMetricCallback(relevant_metric)
-    train(args, custom_callbacks=[metric_callback, PyTorchLightningPruningCallback(trial, monitor=relevant_metric)])
+    train(
+        args,
+        custom_callbacks=[
+            metric_callback,
+            PyTorchLightningPruningCallback(trial, monitor=relevant_metric),
+            EarlyStopping(
+                monitor=relevant_metric,
+                min_delta=0.00,
+                patience=3,
+                verbose=False,
+                mode='min',
+            ),
+        ],
+    )
 
     if metric_callback.most_recent_metrics is None:
         raise ValueError('most recent metric should not be None!')
