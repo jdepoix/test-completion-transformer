@@ -2,7 +2,8 @@ import os
 import sys
 import json
 import traceback
-from concurrent.futures.thread import ThreadPoolExecutor
+from concurrent.futures.process import ProcessPoolExecutor
+import multiprocessing
 
 import torch
 from torch.utils import tensorboard
@@ -30,7 +31,8 @@ class Evaluator():
         sequentialization_client,
         max_prediction_length,
         num_workers,
-        device=None,
+        device,
+        log_interval=1000,
     ):
         self._model_class = model_class
         self._dataset_path = dataset_path
@@ -39,7 +41,12 @@ class Evaluator():
         self._sequentialization_client = sequentialization_client
         self._max_prediction_length = max_prediction_length
         self._num_worker = num_workers
-        self._device = device if device else ('cuda' if torch.cuda.is_available() else 'cpu')
+        self._devices = [device] if device == 'cpu' else [
+            torch.device(f'cuda:{device_id}') for device_id in range(torch.cuda.device_count())
+        ]
+        if device == 'cuda':
+            torch.multiprocessing.set_start_method('spawn')
+        self._log_interval = log_interval
 
     def evaluate(self, tensorboard_log_dir):
         with tensorboard.SummaryWriter(tensorboard_log_dir) as writer:
@@ -50,10 +57,16 @@ class Evaluator():
                     print(results)
                     self._report_results(writer, checkpoint.path, results)
 
-    def _evaluate_checkpoint(self, checkpoint_path):
-        prediction_pipeline = PredictionPipeline(
+    def _init_prediction_pipeline(self, checkpoint_path):
+        process_id = int(multiprocessing.current_process().name.split('-')[-1])
+        device = self._devices[process_id % len(self._devices)]
+        Evaluator.prediction_pipeline = PredictionPipeline(
             ThenSectionPredictor(
-                self._model_class.load_from_checkpoint(checkpoint_path).to(self._device).eval(),
+                self._model_class.load_from_checkpoint(
+                    checkpoint_path
+                ).to(
+                    device
+                ).eval(),
                 self._vocab.get_index(self._vocab.SOS_TOKEN),
                 self._vocab.get_index(self._vocab.EOS_TOKEN),
                 self._max_prediction_length,
@@ -63,18 +76,26 @@ class Evaluator():
             self._sequentialization_client,
         )
 
-        with ThreadPoolExecutor(self._num_worker) as executor:
+    def _evaluate_checkpoint(self, checkpoint_path):
+        with ProcessPoolExecutor(
+            self._num_worker,
+            initializer=self._init_prediction_pipeline,
+            initargs=(checkpoint_path,)
+        ) as executor:
             with open(self._dataset_path) as dataset_file:
                 return self._process_futures([
-                    executor.submit(self._evaluate_datapoint, prediction_pipeline, json_line)
-                    for json_line in dataset_file
+                    executor.submit(self._evaluate_datapoint, json_line, index)
+                    for index, json_line in enumerate(dataset_file)
                 ])
 
-    def _evaluate_datapoint(self, prediction_pipeline, json_line):
+    def _evaluate_datapoint(self, json_line, index):
         source, target = json.loads(json_line)
-        prediction = prediction_pipeline.execute_on_encoded(source)
+        prediction = Evaluator.prediction_pipeline.execute_on_encoded(source)
+        tokenized_prediction = [token.value for token in javalang.tokenizer.tokenize(prediction)]
+        if index % self._log_interval == 0:
+            print(f'FINISHED evaluating {index}')
         return {
-            'prediction': [token.value for token in javalang.tokenizer.tokenize(prediction)],
+            'prediction': tokenized_prediction,
             'target': target,
         }
 
@@ -105,8 +126,6 @@ class Evaluator():
                 error_count += 1
             finally:
                 total_count += 1
-                if total_count % 1000 == 0:
-                    print(f'finished evaluating {total_count}')
 
         rouge_results = Rouge(rouge_n=(2,)).evaluate_tokenized(
             [[prediction] for prediction in predictions],
@@ -146,6 +165,8 @@ if __name__ == '__main__':
     BPE_MODEL_PATH = sys.argv[4]
     SEQUENTIALIZATION_API_PORT = int(sys.argv[5])
     NUM_WORKERS = int(sys.argv[6])
+    DEVICE = sys.argv[7]
+    LOG_INTERVAL = int(sys.argv[8])
 
     # TODO remove
     from DEPRECATED_model import GwtSectionPredictionTransformer
@@ -157,4 +178,6 @@ if __name__ == '__main__':
         AstSequentializationApiClient('localhost', SEQUENTIALIZATION_API_PORT),
         512,
         NUM_WORKERS,
+        DEVICE,
+        LOG_INTERVAL,
     ).evaluate(TENSORBOARD_LOG_DIR)
