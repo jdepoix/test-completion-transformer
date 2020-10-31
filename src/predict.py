@@ -38,23 +38,26 @@ class ThenSectionPredictor():
     class InputSequenceExceededMaxLength(Exception):
         pass
 
-    def __init__(self, model, sos_index, eos_index, max_length, sampler=NucleusSampler()):
+    def __init__(self, model, sos_index, eos_index, max_length, default_sampler=NucleusSampler()):
         self._model = model
         self._sos_index = sos_index
         self._eos_index = eos_index
         self._max_length = max_length
-        self._sampler = sampler
+        self._default_sampler = default_sampler
 
-    def predict(self, test_declaration_sequence):
+    def predict(self, test_declaration_sequence, sampler=None):
         if len(test_declaration_sequence) > self._model.max_sequence_length:
             raise ThenSectionPredictor.InputSequenceExceededMaxLength()
+
+        if sampler is None:
+            sampler = self._default_sampler
 
         test_declaration_tensor = torch.tensor(test_declaration_sequence).to(self._model.device)
         prediction = [self._sos_index]
         while prediction[-1] != self._eos_index:
             if len(prediction) >= self._max_length:
                 raise ThenSectionPredictor.PredictionExceededMaxLength()
-            prediction.append(self._sampler.sample(self._forward(test_declaration_tensor, prediction)))
+            prediction.append(sampler.sample(self._forward(test_declaration_tensor, prediction)))
         return prediction[1:-1]
 
     def _forward(self, source, previous_predictions):
@@ -83,6 +86,7 @@ class PredictionPipeline():
         related_class_name,
         related_method_signature,
         then_section_start_index=None,
+        sampler=None,
     ):
         test_declaration_sequence = self._sequentialization_client.create_test_declaration_sequence(
             test_file_content,
@@ -95,10 +99,10 @@ class PredictionPipeline():
         )
         encoded_sequence = self._bpe_processor.encode(test_declaration_sequence)
         model_input = self._vocab.encode(encoded_sequence)
-        return self.execute_on_encoded(model_input)
+        return self.execute_on_encoded(model_input, sampler)
 
-    def execute_on_encoded(self, encoded_sequence):
-        prediction = self._predictor.predict(encoded_sequence)
+    def execute_on_encoded(self, encoded_sequence, sampler=None):
+        prediction = self._predictor.predict(encoded_sequence, sampler=sampler)
         decoded_prediction = self._vocab.decode(prediction)
         if self._bpe_processor.UNKOWN_TOKEN in decoded_prediction:
             raise PredictionPipeline.ContainsUnknownToken()

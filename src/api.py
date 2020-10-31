@@ -10,13 +10,18 @@ from ast_sequentialization_api_client import AstSequentializationApiClient
 from model import GwtSectionPredictionTransformer
 from data import Vocab
 from bpe import BpeProcessor
-from predict import PredictionPipeline, ThenSectionPredictor
+from predict import PredictionPipeline, ThenSectionPredictor, NucleusSampler, GreedySampler
 
 app = Flask(__name__)
 cors = CORS(app)
 
 
 class PredictionApi():
+    SAMPLER = {
+        'NUCLEUS': NucleusSampler(),
+        'GREEDY': GreedySampler(),
+    }
+
     class Status():
         SUCCESS = 'SUCCESS'
         ERROR = 'ERROR'
@@ -26,6 +31,8 @@ class PredictionApi():
         vocab = Vocab(f'{data_dir}/data/bpe_ast_vocab.txt')
         sequentialization_client = AstSequentializationApiClient('localhost', 5555)
         device = 'cuda' if torch.cuda.is_available() else 'cpu'
+        # TODO REMOVE!!!
+        from DEPRECATED_model import GwtSectionPredictionTransformer
         self._predictors = {
             model_file.split('.ckpt')[0]: PredictionPipeline(
                 ThenSectionPredictor(
@@ -51,6 +58,7 @@ class PredictionApi():
         related_class_name,
         related_method_signature,
         then_section_start_index,
+        sampler,
     ):
         try:
             return {
@@ -63,6 +71,7 @@ class PredictionApi():
                     related_class_name,
                     related_method_signature,
                     then_section_start_index,
+                    self.SAMPLER.get(sampler),
                 )
             }
         except Exception as exception:
@@ -89,5 +98,6 @@ def get_test_relation(model_name):
             data['relatedClassName'],
             data['relatedMethodSignature'],
             data.get('thenSectionStartIndex'),
+            data.get('sampler'),
         )
     )
