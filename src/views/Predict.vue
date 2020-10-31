@@ -157,19 +157,75 @@ export default {
           this.loading = false;
         }
       );
+    },
+    saveStateToUrl() {
+      const encodedState = encodeURIComponent(JSON.stringify({
+        testedCode: this.testedCode,
+        testedClass: this.testedClass,
+        testedSignature: this.testedSignature,
+        testCode: this.testCode,
+        testClass: this.testClass,
+        testSignature: this.testSignature,
+        prediction: this.prediction,
+        sampler: this.sampler,
+        model: this.model,
+      }));
+      history.pushState({}, null, `?state=${encodedState}`);
+    },
+    loadStateFromUrl() {
+      const param = new URLSearchParams(window.location.search).get('state');
+      if (param === null) {
+        return;
+      }
+      const previousState = JSON.parse(param);
+      this.testedCode = previousState.testedCode;
+      this.testedClass = previousState.testedClass;
+      this.testedSignature = previousState.testedSignature;
+      this.testCode = previousState.testCode;
+      this.testClass = previousState.testClass;
+      this.testSignature = previousState.testSignature;
+      this.prediction = previousState.prediction;
+      this.sampler = previousState.sampler;
+      this.model = previousState.model;
     }
   },
   watch: {
+    testedCode() {
+      this.saveStateToUrl();
+    },
+    testedClass() {
+      this.saveStateToUrl();
+    },
+    testCode() {
+      this.saveStateToUrl();
+    },
+    testClass() {
+      this.saveStateToUrl();
+    },
+    prediction() {
+      this.saveStateToUrl();
+    },
+    sampler() {
+      this.saveStateToUrl();
+    },
+    model() {
+      this.saveStateToUrl();
+    },
     testedSignature() {
       if (this.testedSignature.includes('\n')) {
         this.testedSignature = this.testedSignature.replace('\n', '');
       }
+      this.saveStateToUrl();
     },
     testSignature() {
       if (this.testSignature.includes('\n')) {
         this.testSignature = this.testSignature.replace('\n', '');
       }
+      this.saveStateToUrl();
     },
+  },
+  mounted() {
+    this.loadStateFromUrl();
   }
 }
 </script>
