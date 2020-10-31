@@ -9,6 +9,9 @@
       <router-link :to="'/test-relation/random'">
         <button type="button" class="btn btn-primary ml-2">Get random</button>
       </router-link>
+      <router-link :to="'/predict'">
+        <button type="button" class="btn btn-primary ml-2">Predict</button>
+      </router-link>
     </div>
     <ul class="list-group">
       <li v-for="result in searchResults" :key="result.id" class="list-group-item">
