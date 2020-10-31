@@ -1,22 +1,10 @@
 <template>
   <div class="predict">
     <div class="row">
-      <div class="col-9 mt-5 mb-5">
-        <h1 class="">Predict</h1>
+      <div class="col-12 mt-5 mb-5">
+        <h1 class="">Prediction Explorer</h1>
       </div>
-      <div class="col-3 mt-5 mb-5">
-        <button 
-          @click="runPrediction"
-          type="button" 
-          class="btn btn-outline-primary w-100 btn-lg" 
-          :disabled="loading || testedCode == '' || testCode == '' || testedSignature == '' || testSignature == ''"
-        >
-          <span v-if="!loading">RUN PREDICTION</span>
-          <div v-else class="spinner-border text-primary" role="status">
-            <span class="sr-only">Loading...</span>
-          </div>
-        </button>
-      </div>
+
       <div class="col-12">
         <h2>Code under test</h2>
       </div>
@@ -63,8 +51,38 @@
         </div>
       </div>
 
-      <div class="col-12" v-if="prediction">
+      <div class="col-12">
         <h2>Prediction</h2>
+      </div>
+      <div class="col-12 mb-1">
+        <div class="input-group input-group-lg">
+          <div class="input-group-prepend">
+            <label class="input-group-text" for="inputGroupSelect01">Model</label>
+          </div>
+          <select v-model="model" class="custom-select">
+            <option disabled>Select model...</option>
+            <option value="default">Transformer</option>
+          </select>
+          <select v-model="sampler" class="custom-select">
+            <option disabled>Select sampler...</option>
+            <option value="NUCLEUS">Nucleus</option>
+            <option value="GREEDY">Greedy</option>
+          </select>
+          <div class="input-group-append">
+            <button 
+              @click="runPrediction" 
+              id="predictButton"
+              class="btn btn-primary" 
+              type="button" 
+              :disabled="loading || testedCode == '' || testCode == '' || testedSignature == '' || testSignature == ''"
+            >
+              <span v-if="!loading">PREDICT</span>
+              <div v-else class="spinner-border" role="status">
+                <span class="sr-only">Loading...</span>
+              </div>
+            </button>
+          </div>
+        </div>
       </div>
       <div class="col-12 mb-5" v-if="prediction">
         <prism-editor v-if="prediction.status == 'SUCCESS'" class="editor pt-3 pb-3" :highlight="highlighter" v-model="prediction.data" line-numbers readonly :tab-size="4"></prism-editor>
@@ -113,6 +131,8 @@ export default {
     testSignature: 'public void testMethod()',
     prediction: null,
     loading: false,
+    sampler: 'NUCLEUS',
+    model: 'default',
   }),
   methods: {
     highlighter(code) {
@@ -122,7 +142,7 @@ export default {
       this.prediction = null;
       this.loading = true;
       transformerPredictionApi.getPrediction(
-        'default',
+        this.model,
         this.testCode,
         this.testClass,
         this.testSignature,
@@ -130,6 +150,7 @@ export default {
         this.testedClass,
         this.testedSignature,
         null,
+        this.sampler,
       ).then(
         response => {
           this.prediction = response;
@@ -168,5 +189,10 @@ export default {
 
 .prism-editor__textarea:focus {
   outline: none;
+}
+
+#predictButton {
+  width: 150px;
+  height: 48px;
 }
 </style>

@@ -5,7 +5,17 @@ class TransformerPredictionApi {
         this.apiUrl = apiUrl;
     }
 
-    async getPrediction(modelName, testFileContent, testClassName, testMethodSignature, relatedFileContent, relatedClassName, relatedMethodSignature, thenSectionStartIndex) {
+    async getPrediction(
+        modelName,
+        testFileContent,
+        testClassName, 
+        testMethodSignature, 
+        relatedFileContent, 
+        relatedClassName, 
+        relatedMethodSignature, 
+        thenSectionStartIndex,
+        sampler = null,
+    ) {
         return await fetch(`${this.apiUrl}/${TransformerPredictionApi._PREDICTION_ENDPOINT}/${modelName}`, {
             method: 'POST',
             headers: {
@@ -19,6 +29,7 @@ class TransformerPredictionApi {
                 relatedClassName: relatedClassName,
                 relatedMethodSignature: relatedMethodSignature,
                 thenSectionStartIndex: thenSectionStartIndex,
+                sampler: sampler,
             }),
         }).then(response => response.json());
     }
