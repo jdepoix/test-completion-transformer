@@ -12,6 +12,16 @@ from bpe import BpeProcessor
 from data import Vocab
 
 
+TEST_CONTEXT_OPENING_NODE = (
+    '<[.testContextMethodDeclarations:org.jdepoix.dataset.ast.node.TestContextMethodDeclaration]>'
+)
+TEST_CONTEXT_CLOSING_NODE = (
+    '<[/.testContextMethodDeclarations:org.jdepoix.dataset.ast.node.TestContextMethodDeclaration]>'
+)
+CONTEXT_OPENING_NODE = '<[.contextMethodDeclarations:org.jdepoix.dataset.ast.node.ContextMethodDeclaration]>'
+CONTEXT_CLOSING_NODE = '<[/.contextMethodDeclarations:org.jdepoix.dataset.ast.node.ContextMethodDeclaration]>'
+
+
 def create_ast_value_vocab(dataset_path, output_path, only_values, special_words=None):
     vocab = set()
     with open(dataset_path) as dataset_file:
@@ -37,12 +47,28 @@ def save_vocab(path, vocab):
         file.writelines(f'{word}\n' for word in vocab)
 
 
+def remove_context_declarations_from_ast_sequence(sequence):
+    final_sequence = []
+    append = True
+
+    for token in sequence:
+        if token == CONTEXT_OPENING_NODE or token == TEST_CONTEXT_OPENING_NODE:
+            append = False
+        if append:
+            final_sequence.append(token)
+        if token == CONTEXT_CLOSING_NODE or token == TEST_CONTEXT_CLOSING_NODE:
+            append = True
+
+    return final_sequence
+
+
 def bpe_encode_dataset(
     dataset_path,
     model_path,
     encoded_dataset_path,
     max_source_seq_length=None,
     max_target_seq_length=None,
+    remove_context_declarations=False,
     log_interval=1000,
 ):
     bpe_processor = BpeProcessor(model_path)
@@ -61,13 +87,17 @@ def bpe_encode_dataset(
                 if unique_data in visited:
                     continue
 
+                if remove_context_declarations:
+                    source_seq = remove_context_declarations_from_ast_sequence(source_seq)
+                    target_seq = remove_context_declarations_from_ast_sequence(target_seq)
+
                 output_dataset.write(json.dumps({
                     'id': datapoint['id'],
                     'src': source_seq,
                     'trgTok': target_seq,
                     'trgCode': datapoint['trgCode'],
-                    'testCtxCount': datapoint['testCtxCount'],
-                    'ctxCount': datapoint['ctxCount'],
+                    'testCtxCount': datapoint['testCtxCount'] if not remove_context_declarations else 0,
+                    'ctxCount': datapoint['ctxCount'] if not remove_context_declarations else 0,
                 }, separators=(',', ':')) + '\n')
 
                 visited.add(unique_data)
