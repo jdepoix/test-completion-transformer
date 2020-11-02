@@ -47,16 +47,22 @@ def save_vocab(path, vocab):
         file.writelines(f'{word}\n' for word in vocab)
 
 
-def remove_context_declarations_from_ast_sequence(sequence):
+def remove_context_declarations_from_ast_sequence(
+    sequence,
+    context_opening_node,
+    context_closing_node,
+    test_context_opening_node,
+    test_context_closing_node,
+):
     final_sequence = []
     append = True
 
     for token in sequence:
-        if token == CONTEXT_OPENING_NODE or token == TEST_CONTEXT_OPENING_NODE:
+        if token == context_opening_node or token == test_context_opening_node:
             append = False
         if append:
             final_sequence.append(token)
-        if token == CONTEXT_CLOSING_NODE or token == TEST_CONTEXT_CLOSING_NODE:
+        if token == context_closing_node or token == test_context_closing_node:
             append = True
 
     return final_sequence
@@ -170,7 +176,12 @@ def create_encoded_dataset_split(data_split_dir_path, bpe_dataset_path, vocab_pa
             line_counter += 1
 
 
-def encoded_predefined_dataset_split(data_split_dir_path, bpe_dataset_path, vocab_path):
+def encoded_predefined_dataset_split(
+    data_split_dir_path,
+    bpe_dataset_path,
+    vocab_path,
+    remove_context_declarations=False,
+):
     with \
             open(f'{data_split_dir_path}/train_ids.txt') as train_data_file, \
             open(f'{data_split_dir_path}/validate_ids.txt') as validate_data_file, \
@@ -182,6 +193,11 @@ def encoded_predefined_dataset_split(data_split_dir_path, bpe_dataset_path, voca
     vocab = Vocab(vocab_path)
     sos_index = vocab.get_index(Vocab.SOS_TOKEN)
     eos_index = vocab.get_index(Vocab.EOS_TOKEN)
+    if remove_context_declarations:
+        ctx_open_id = vocab.get_index(CONTEXT_OPENING_NODE)
+        ctx_close_id = vocab.get_index(CONTEXT_CLOSING_NODE)
+        test_ctx_open_id = vocab.get_index(TEST_CONTEXT_OPENING_NODE)
+        test_ctx_close_id = vocab.get_index(TEST_CONTEXT_CLOSING_NODE)
 
     with \
             open(bpe_dataset_path) as dataset_file, \
@@ -193,9 +209,27 @@ def encoded_predefined_dataset_split(data_split_dir_path, bpe_dataset_path, voca
         for json_line in dataset_file:
             json_data = json.loads(json_line)
             src_data = [vocab.get_index(token) for token in json_data['src']]
+            trg_data = [vocab.get_index(token) for token in json_data['trgTok']]
+
+            if remove_context_declarations:
+                src_data = remove_context_declarations_from_ast_sequence(
+                    src_data,
+                    ctx_open_id,
+                    ctx_close_id,
+                    test_ctx_open_id,
+                    test_ctx_close_id,
+                )
+                trg_data = remove_context_declarations_from_ast_sequence(
+                    trg_data,
+                    ctx_open_id,
+                    ctx_close_id,
+                    test_ctx_open_id,
+                    test_ctx_close_id,
+                )
+
             data = json.dumps([
                 src_data,
-                [sos_index] + [vocab.get_index(token) for token in json_data['trgTok']] + [eos_index],
+                [sos_index] + trg_data + [eos_index],
             ], separators=(',', ':')) + '\n'
 
             if json_data['id'] in train_ids:
