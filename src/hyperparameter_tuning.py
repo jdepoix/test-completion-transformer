@@ -1,5 +1,9 @@
+import os
+
 import optuna
 from optuna.integration import PyTorchLightningPruningCallback
+
+import torch
 
 import pytorch_lightning as pl
 from pytorch_lightning.callbacks import EarlyStopping
@@ -7,19 +11,17 @@ from pytorch_lightning.callbacks import EarlyStopping
 from training import train, get_parser
 
 
-class MostRecentMetricCallback(pl.Callback):
-    def __init__(self, metric_name):
-        super().__init__()
-        self._metric_name = metric_name
-        self.most_recent_metrics = None
-
-    def on_validation_end(self, trainer, pl_module):
-        metric = trainer.callback_metrics.get(self._metric_name)
-        if metric:
-            if self.most_recent_metrics:
-                self.most_recent_metrics = min(metric.item(), self.most_recent_metrics)
-            else:
-                self.most_recent_metrics = metric.item()
+def find_best_checkpoint(log_dir):
+    scores = []
+    for checkpoint in os.scandir(f'{log_dir}/checkpoints'):
+        if checkpoint.name.endswith('.ckpt') and 'tmp' not in checkpoint.name:
+            scores.append(
+                torch.load(
+                    checkpoint.path,
+                    map_location=torch.device('cpu')
+                )['callbacks'][pl.callbacks.model_checkpoint.ModelCheckpoint]['best_model_score']
+            )
+    return min(scores).item()
 
 
 def objective(trial):
@@ -34,11 +36,9 @@ def objective(trial):
     args.positional_encoding_dropout = trial.suggest_uniform('positional_encoding_dropout', 0.1, 0.5)
     args.transformer_dropout = trial.suggest_uniform('transformer_dropout', 0.1, 0.5)
 
-    metric_callback = MostRecentMetricCallback(relevant_metric)
-    train(
+    trainer = train(
         args,
         custom_callbacks=[
-            metric_callback,
             PyTorchLightningPruningCallback(trial, monitor=relevant_metric),
             EarlyStopping(
                 monitor=relevant_metric,
@@ -50,10 +50,7 @@ def objective(trial):
         ],
     )
 
-    if metric_callback.most_recent_metrics is None:
-        raise ValueError('most recent metric should not be None!')
-
-    return metric_callback.most_recent_metrics
+    return find_best_checkpoint(trainer.logger.log_dir)
 
 
 def run_study():

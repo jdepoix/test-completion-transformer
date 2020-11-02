@@ -68,6 +68,7 @@ def train(args, custom_callbacks=None):
     )
 
     trainer.fit(model, data_module)
+    return trainer
 
 
 if __name__ == '__main__':
