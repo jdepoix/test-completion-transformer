@@ -13,13 +13,6 @@ from bpe import BpeProcessor
 from data import Vocab
 
 
-class AstNode():
-    OPEN_TEST_CONTEXT = '<[.testContextMethodDeclarations:org.jdepoix.dataset.ast.node.TestContextMethodDeclaration]>'
-    CLOSE_TEST_CONTEXT = '<[/.testContextMethodDeclarations:org.jdepoix.dataset.ast.node.TestContextMethodDeclaration]>'
-    OPEN_CONTEXT = '<[.contextMethodDeclarations:org.jdepoix.dataset.ast.node.ContextMethodDeclaration]>'
-    CLOSE_CONTEXT = '<[/.contextMethodDeclarations:org.jdepoix.dataset.ast.node.ContextMethodDeclaration]>'
-
-
 class TargetFormat():
     AST = 'AST'
     CODE = 'CODE'
@@ -28,8 +21,7 @@ class TargetFormat():
 def create_ast_value_vocab(dataset_path, output_path, only_values, special_words=None):
     vocab = set()
     with open(dataset_path) as dataset_file:
-        for json_line in dataset_file:
-            datapoint = json.loads(json_line)
+        for datapoint in iterate_jsonl(dataset_file):
             vocab.update(
                 token.replace('\n', BpeProcessor.NEW_LINE_TOKEN)
                 for token in datapoint['src'] if not only_values or ast_sequence.Token.is_value(token)
@@ -84,8 +76,7 @@ def bpe_encode_dataset(
     visited = set()
     counter = 0
     with open(dataset_path) as dataset_file, open(encoded_dataset_path, 'w+') as output_dataset:
-        for json_line in dataset_file:
-            datapoint = json.loads(json_line)
+        for datapoint in iterate_jsonl(dataset_file):
             source_seq = bpe_processor.encode(datapoint['src'])
             target_seq = bpe_processor.encode(datapoint['trgTok'])
             if (
@@ -100,14 +91,14 @@ def bpe_encode_dataset(
                     source_seq = remove_context_declarations_from_ast_sequence(source_seq)
                     target_seq = remove_context_declarations_from_ast_sequence(target_seq)
 
-                output_dataset.write(json.dumps({
+                output_dataset.write(dump_jsonl({
                     'id': datapoint['id'],
                     'src': source_seq,
                     'trgTok': target_seq,
                     'trgCode': datapoint['trgCode'],
                     'testCtxCount': datapoint['testCtxCount'] if not remove_context_declarations else 0,
                     'ctxCount': datapoint['ctxCount'] if not remove_context_declarations else 0,
-                }, separators=(',', ':')) + '\n')
+                }))
 
                 visited.add(unique_data)
                 counter += 1
@@ -149,22 +140,20 @@ def create_encoded_dataset_split(data_split_dir_path, bpe_dataset_path, vocab_pa
             open(f'{data_split_dir_path}/validate_code_tokens.jsonl', 'w+') as validate_code_tokens_file, \
             open(f'{data_split_dir_path}/test_code_tokens.jsonl', 'w+') as test_code_tokens_file:
         line_counter = 0
-        for json_line in dataset_file:
-            json_data = json.loads(json_line)
+        for json_data in iterate_jsonl(dataset_file):
             src_data = [vocab.get_index(token) for token in json_data['src']]
-            data = json.dumps([
+            data = dump_jsonl([
                 src_data,
                 [sos_index] + [vocab.get_index(token) for token in json_data['trgTok']] + [eos_index],
-            ], separators=(',', ':')) + '\n'
+            ])
 
             if line_counter in train_lines:
                 train_data_file.write(data)
                 train_data_ids_file.write(json_data['id'] + '\n')
             else:
-                code_tokens = json.dumps(
+                code_tokens = dump_jsonl(
                     [src_data, [token.value for token in tokenizer.tokenize(json_data['trgCode'])]],
-                    separators=(',', ':')
-                ) + '\n'
+                )
                 if line_counter in validation_lines:
                     validate_data_file.write(data)
                     validate_data_ids_file.write(json_data['id'] + '\n')
@@ -197,10 +186,10 @@ def encoded_predefined_dataset_split(
     sos_index = vocab.get_index(Vocab.SOS_TOKEN)
     eos_index = vocab.get_index(Vocab.EOS_TOKEN)
     if remove_context_declarations:
-        ctx_open_id = vocab.get_index(AstNode.OPEN_CONTEXT)
-        ctx_close_id = vocab.get_index(AstNode.CLOSE_CONTEXT)
-        test_ctx_open_id = vocab.get_index(AstNode.OPEN_TEST_CONTEXT)
-        test_ctx_close_id = vocab.get_index(AstNode.CLOSE_TEST_CONTEXT)
+        ctx_open_id = vocab.get_index(ast_sequence.Token.OPEN_CONTEXT)
+        ctx_close_id = vocab.get_index(ast_sequence.Token.CLOSE_CONTEXT)
+        test_ctx_open_id = vocab.get_index(ast_sequence.Token.OPEN_TEST_CONTEXT)
+        test_ctx_close_id = vocab.get_index(ast_sequence.Token.CLOSE_TEST_CONTEXT)
 
     with \
             open(bpe_dataset_path) as dataset_file, \
@@ -209,8 +198,7 @@ def encoded_predefined_dataset_split(
             open(f'{data_split_dir_path}/test.jsonl', 'w+') as test_data_file, \
             open(f'{data_split_dir_path}/validate_code_tokens.jsonl', 'w+') as validate_code_tokens_file, \
             open(f'{data_split_dir_path}/test_code_tokens.jsonl', 'w+') as test_code_tokens_file:
-        for json_line in dataset_file:
-            json_data = json.loads(json_line)
+        for json_data in iterate_jsonl(dataset_file):
             src_data = [vocab.get_index(token) for token in json_data['src']]
             trg_data = [vocab.get_index(token) for token in json_data['trgTok']]
 
@@ -230,18 +218,17 @@ def encoded_predefined_dataset_split(
                     test_ctx_close_id,
                 )
 
-            data = json.dumps([
+            data = dump_jsonl([
                 src_data,
                 [sos_index] + trg_data + [eos_index],
-            ], separators=(',', ':')) + '\n'
+            ])
 
             if json_data['id'] in train_ids:
                 train_data_file.write(data)
             else:
-                code_tokens = json.dumps(
-                    [src_data, [token.value for token in tokenizer.tokenize(json_data['trgCode'])]],
-                    separators=(',', ':')
-                ) + '\n'
+                code_tokens = dump_jsonl(
+                    [src_data, [token.value for token in tokenizer.tokenize(json_data['trgCode'])]]
+                )
                 if json_data['id'] in validate_ids:
                     validate_data_file.write(data)
                     validate_code_tokens_file.write(code_tokens)
@@ -252,12 +239,27 @@ def encoded_predefined_dataset_split(
                     raise ValueError(f'id {json_data["id"]} is not part of any of the splits')
 
 
+def tokenize_target_data(input_dataset_path, output_path):
+    with open(input_dataset_path) as input_dataset, open(output_path, 'w+') as tokenized_dataset:
+        # TODO
+        pass
+
+
 def get_file_length(path):
     with open(path) as file:
         i = 0
         for i, _ in enumerate(file, 1):
             pass
     return i
+
+
+def iterate_jsonl(file):
+    for json_line in file:
+        yield json.loads(json_line)
+
+
+def dump_jsonl(data):
+    return json.dumps(data, separators=(',', ':')) + '\n'
 
 
 if __name__ == '__main__':
@@ -280,10 +282,6 @@ if __name__ == '__main__':
         if not os.path.exists(directory):
             os.makedirs(directory)
 
-    if args.tokenize_input_dataset_target_code:
-        # TODO
-        pass
-
     model_path = f'{args.output_dir}/model'
     model_name = 'ast_values'
     raw_vocab_path = f'{args.output_dir}/data/raw_ast_value_vocab.txt'
@@ -291,6 +289,11 @@ if __name__ == '__main__':
     output_dataset_path = f'{args.output_dir}/data/bpe_gwt.jsonl'
     data_split_dir_path = f'{args.output_dir}/data/bpe_ast_split'
 
+    if args.tokenize_input_dataset_target_code:
+        print('Start tokenizing target data...')
+        tokenized_dataset_path = f'{args.input_dataset_path.split(".jsonl")[0]}_tokenized.jsonl'
+        tokenize_target_data(args.input_dataset_path, tokenized_dataset_path)
+        args.input_dataset_path = tokenized_dataset_path
     print('Start creating raw AST value vocab...')
     create_ast_value_vocab(args.input_dataset_path, raw_vocab_path, only_values=True)
     print('Start training BPE...')
