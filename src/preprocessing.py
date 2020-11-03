@@ -1,4 +1,3 @@
-import sys
 import os
 import json
 import math
@@ -151,17 +150,17 @@ def create_encoded_dataset_split(data_split_dir_path, bpe_dataset_path, vocab_pa
                 train_data_file.write(data)
                 train_data_ids_file.write(json_data['id'] + '\n')
             else:
-                code_tokens = dump_jsonl(
-                    [src_data, [token.value for token in tokenizer.tokenize(json_data['trgCode'])]],
-                )
+                code_tokens = dump_jsonl([src_data, json_data['trgCode']]) if json_data['trgCode'] is not None else None
                 if line_counter in validation_lines:
                     validate_data_file.write(data)
                     validate_data_ids_file.write(json_data['id'] + '\n')
-                    validate_code_tokens_file.write(code_tokens)
+                    if code_tokens:
+                        validate_code_tokens_file.write(code_tokens)
                 elif line_counter in test_lines:
                     test_data_file.write(data)
                     test_data_ids_file.write(json_data['id'] + '\n')
-                    test_code_tokens_file.write(code_tokens)
+                    if code_tokens:
+                        test_code_tokens_file.write(code_tokens)
                 else:
                     raise ValueError(f'id {json_data["id"]} is not part of any of the splits')
 
@@ -226,23 +225,30 @@ def encoded_predefined_dataset_split(
             if json_data['id'] in train_ids:
                 train_data_file.write(data)
             else:
-                code_tokens = dump_jsonl(
-                    [src_data, [token.value for token in tokenizer.tokenize(json_data['trgCode'])]]
-                )
+                code_tokens = dump_jsonl([src_data, json_data['trgCode']]) if json_data['trgCode'] is not None else None
                 if json_data['id'] in validate_ids:
                     validate_data_file.write(data)
-                    validate_code_tokens_file.write(code_tokens)
+                    if code_tokens:
+                        validate_code_tokens_file.write(code_tokens)
                 elif json_data['id'] in test_ids:
                     test_data_file.write(data)
-                    test_code_tokens_file.write(code_tokens)
+                    if code_tokens:
+                        test_code_tokens_file.write(code_tokens)
                 else:
                     raise ValueError(f'id {json_data["id"]} is not part of any of the splits')
 
 
 def tokenize_target_data(input_dataset_path, output_path):
     with open(input_dataset_path) as input_dataset, open(output_path, 'w+') as tokenized_dataset:
-        # TODO
-        pass
+        for datapoint in iterate_jsonl(input_dataset):
+            tokenized_dataset.write(dump_jsonl({
+                'id': datapoint['id'],
+                'src': datapoint['src'],
+                'trgTok': datapoint['trgTok'],
+                'trgCode': tokenize_code(datapoint['trgCode']),
+                'testCtxCount': datapoint['testCtxCount'],
+                'ctxCount': datapoint['ctxCount'],
+            }))
 
 
 def get_file_length(path):
@@ -256,6 +262,13 @@ def get_file_length(path):
 def iterate_jsonl(file):
     for json_line in file:
         yield json.loads(json_line)
+
+
+def tokenize_code(code):
+    try:
+        return [token.value for token in tokenizer.tokenize(code)]
+    except:
+        return None
 
 
 def dump_jsonl(data):
