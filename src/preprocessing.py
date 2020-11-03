@@ -2,6 +2,7 @@ import sys
 import os
 import json
 import math
+from argparse import ArgumentParser
 
 from torch.utils.data import random_split
 
@@ -12,14 +13,16 @@ from bpe import BpeProcessor
 from data import Vocab
 
 
-TEST_CONTEXT_OPENING_NODE = (
-    '<[.testContextMethodDeclarations:org.jdepoix.dataset.ast.node.TestContextMethodDeclaration]>'
-)
-TEST_CONTEXT_CLOSING_NODE = (
-    '<[/.testContextMethodDeclarations:org.jdepoix.dataset.ast.node.TestContextMethodDeclaration]>'
-)
-CONTEXT_OPENING_NODE = '<[.contextMethodDeclarations:org.jdepoix.dataset.ast.node.ContextMethodDeclaration]>'
-CONTEXT_CLOSING_NODE = '<[/.contextMethodDeclarations:org.jdepoix.dataset.ast.node.ContextMethodDeclaration]>'
+class AstNode():
+    OPEN_TEST_CONTEXT = '<[.testContextMethodDeclarations:org.jdepoix.dataset.ast.node.TestContextMethodDeclaration]>'
+    CLOSE_TEST_CONTEXT = '<[/.testContextMethodDeclarations:org.jdepoix.dataset.ast.node.TestContextMethodDeclaration]>'
+    OPEN_CONTEXT = '<[.contextMethodDeclarations:org.jdepoix.dataset.ast.node.ContextMethodDeclaration]>'
+    CLOSE_CONTEXT = '<[/.contextMethodDeclarations:org.jdepoix.dataset.ast.node.ContextMethodDeclaration]>'
+
+
+class TargetFormat():
+    AST = 'AST'
+    CODE = 'CODE'
 
 
 def create_ast_value_vocab(dataset_path, output_path, only_values, special_words=None):
@@ -194,10 +197,10 @@ def encoded_predefined_dataset_split(
     sos_index = vocab.get_index(Vocab.SOS_TOKEN)
     eos_index = vocab.get_index(Vocab.EOS_TOKEN)
     if remove_context_declarations:
-        ctx_open_id = vocab.get_index(CONTEXT_OPENING_NODE)
-        ctx_close_id = vocab.get_index(CONTEXT_CLOSING_NODE)
-        test_ctx_open_id = vocab.get_index(TEST_CONTEXT_OPENING_NODE)
-        test_ctx_close_id = vocab.get_index(TEST_CONTEXT_CLOSING_NODE)
+        ctx_open_id = vocab.get_index(AstNode.OPEN_CONTEXT)
+        ctx_close_id = vocab.get_index(AstNode.CLOSE_CONTEXT)
+        test_ctx_open_id = vocab.get_index(AstNode.OPEN_TEST_CONTEXT)
+        test_ctx_close_id = vocab.get_index(AstNode.CLOSE_TEST_CONTEXT)
 
     with \
             open(bpe_dataset_path) as dataset_file, \
@@ -258,34 +261,47 @@ def get_file_length(path):
 
 
 if __name__ == '__main__':
-    VOCAB_SIZE = 16000
+    parser = ArgumentParser()
+    parser.add_argument('--bpe_vocab_size', type=int, default=16000)
+    parser.add_argument('--input_dataset_path', type=str, required=True)
+    parser.add_argument('--output_dir', type=str, required=True)
+    parser.add_argument('--tokenize_input_dataset_target_code', type=bool, default=False)
+    parser.add_argument(
+        '--target_format',
+        type=str,
+        default=TargetFormat.AST,
+        choices=(TargetFormat.AST, TargetFormat.CODE,)
+    )
+    parser.add_argument('--max_source_seq_length', type=int, default=None)
+    parser.add_argument('--max_target_seq_length', type=int, default=None)
+    args = parser.parse_args()
 
-    input_dataset_path = sys.argv[1]
-    output_dir = sys.argv[2]
-    max_source_seq_length = int(sys.argv[3]) if len(sys.argv) > 3 else None
-    max_target_seq_length = int(sys.argv[4]) if len(sys.argv) > 3 else None
-    for directory in [output_dir, f'{output_dir}/data', f'{output_dir}/model']:
+    for directory in [args.output_dir, f'{args.output_dir}/data', f'{args.output_dir}/model']:
         if not os.path.exists(directory):
             os.makedirs(directory)
 
-    model_path = f'{output_dir}/model'
+    if args.tokenize_input_dataset_target_code:
+        # TODO
+        pass
+
+    model_path = f'{args.output_dir}/model'
     model_name = 'ast_values'
-    raw_vocab_path = f'{output_dir}/data/raw_ast_value_vocab.txt'
-    bpe_vocab_path = f'{output_dir}/data/bpe_ast_vocab.txt'
-    output_dataset_path = f'{output_dir}/data/bpe_gwt.jsonl'
-    data_split_dir_path = f'{output_dir}/data/bpe_ast_split'
+    raw_vocab_path = f'{args.output_dir}/data/raw_ast_value_vocab.txt'
+    bpe_vocab_path = f'{args.output_dir}/data/bpe_ast_vocab.txt'
+    output_dataset_path = f'{args.output_dir}/data/bpe_gwt.jsonl'
+    data_split_dir_path = f'{args.output_dir}/data/bpe_ast_split'
 
     print('Start creating raw AST value vocab...')
-    create_ast_value_vocab(input_dataset_path, raw_vocab_path, only_values=True)
+    create_ast_value_vocab(args.input_dataset_path, raw_vocab_path, only_values=True)
     print('Start training BPE...')
-    BpeProcessor.train(raw_vocab_path, model_name, model_path, VOCAB_SIZE)
+    BpeProcessor.train(raw_vocab_path, model_name, model_path, args.bpe_vocab_size)
     print('Start creating BPE encoded dataset...')
     bpe_encode_dataset(
-        input_dataset_path,
+        args.input_dataset_path,
         f'{model_path}/{model_name}.model',
         output_dataset_path,
-        max_source_seq_length,
-        max_target_seq_length
+        args.max_source_seq_length,
+        args.max_target_seq_length,
     )
     print('Start creating BPE encoded AST value vocab...')
     create_ast_value_vocab(
