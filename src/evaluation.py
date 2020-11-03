@@ -4,6 +4,7 @@ import json
 import traceback
 from concurrent.futures.process import ProcessPoolExecutor
 import multiprocessing
+from argparse import ArgumentParser
 
 import torch
 from torch.utils import tensorboard
@@ -159,25 +160,28 @@ class Evaluator():
 
 
 if __name__ == '__main__':
-    TENSORBOARD_LOG_DIR = sys.argv[1]
-    EVALUATION_DATASET_PATH = sys.argv[2]
-    VOCAB_PATH = sys.argv[3]
-    BPE_MODEL_PATH = sys.argv[4]
-    SEQUENTIALIZATION_API_PORT = int(sys.argv[5])
-    NUM_WORKERS = int(sys.argv[6])
-    DEVICE = sys.argv[7]
-    LOG_INTERVAL = int(sys.argv[8])
+    parser = ArgumentParser()
+    parser.add_argument('--tensorboard_log_dir', type=str, required=True)
+    parser.add_argument('--evaluation_dataset_path', type=str, required=True)
+    parser.add_argument('--vocab_path', type=str, required=True)
+    parser.add_argument('--bpe_model_path', type=str, required=True)
+    parser.add_argument('--num_workers', type=int, required=True)
+    parser.add_argument('--sequentialization_api_port', type=int, default=5555)
+    parser.add_argument('--sequentialization_api_host', type=str, default='localhost')
+    parser.add_argument('--device', type=str, default='cuda', choices=('cpu', 'cuda',))
+    parser.add_argument('--log_interval', type=int, default=1000)
+    args = parser.parse_args()
 
     # TODO remove
     from DEPRECATED_model import GwtSectionPredictionTransformer
     Evaluator(
         GwtSectionPredictionTransformer,
-        EVALUATION_DATASET_PATH,
-        data.Vocab(VOCAB_PATH),
-        bpe.BpeProcessor(BPE_MODEL_PATH),
-        AstSequentializationApiClient('localhost', SEQUENTIALIZATION_API_PORT),
+        args.tensorboard_log_dir,
+        data.Vocab(args.vocab_path),
+        bpe.BpeProcessor(args.bpe_model_path),
+        AstSequentializationApiClient(args.sequentialization_api_host, args.sequentialization_api_port),
         512,
-        NUM_WORKERS,
-        DEVICE,
-        LOG_INTERVAL,
-    ).evaluate(TENSORBOARD_LOG_DIR)
+        args.num_workers,
+        args.device,
+        args.log_interval,
+    ).evaluate(args.tensorboard_log_dir)
