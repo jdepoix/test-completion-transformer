@@ -16,18 +16,30 @@ class TargetFormat():
     AST = 'AST'
     CODE = 'CODE'
 
+    @staticmethod
+    def get_key(format):
+        if format == TargetFormat.AST:
+            return 'trgTok'
+        if format == TargetFormat.CODE:
+            return 'trgCode'
+        raise ValueError('invalid format')
 
-def create_ast_value_vocab(dataset_path, output_path, only_values, special_words=None):
+
+def create_ast_value_vocab(dataset_path, output_path, only_values, special_words=None, target_format=TargetFormat.AST):
     vocab = set()
     with open(dataset_path) as dataset_file:
         for datapoint in iterate_jsonl(dataset_file):
+            target_data = datapoint[TargetFormat.get_key(target_format)]
+            if target_data is None:
+                continue
+
             vocab.update(
                 token.replace('\n', BpeProcessor.NEW_LINE_TOKEN)
                 for token in datapoint['src'] if not only_values or ast_sequence.Token.is_value(token)
             )
             vocab.update(
                 token.replace('\n', BpeProcessor.NEW_LINE_TOKEN)
-                for token in datapoint['trgTok'] if not only_values or ast_sequence.Token.is_value(token)
+                for token in target_data if not only_values or ast_sequence.Token.is_value(token)
             )
     if special_words:
         for word in special_words:
@@ -70,14 +82,18 @@ def bpe_encode_dataset(
     max_target_seq_length=None,
     remove_context_declarations=False,
     log_interval=1000,
+    target_format=TargetFormat.AST,
 ):
     bpe_processor = BpeProcessor(model_path)
     visited = set()
     counter = 0
     with open(dataset_path) as dataset_file, open(encoded_dataset_path, 'w+') as output_dataset:
         for datapoint in iterate_jsonl(dataset_file):
+            target_data = datapoint[TargetFormat.get_key(target_format)]
+            if target_data is None:
+                continue
             source_seq = bpe_processor.encode(datapoint['src'])
-            target_seq = bpe_processor.encode(datapoint['trgTok'])
+            target_seq = bpe_processor.encode(target_data)
             if (
                 (max_source_seq_length is None or len(source_seq) <= max_source_seq_length)
                 and (max_target_seq_length is None or len(target_seq) <= max_target_seq_length)
@@ -93,8 +109,8 @@ def bpe_encode_dataset(
                 output_dataset.write(dump_jsonl({
                     'id': datapoint['id'],
                     'src': source_seq,
-                    'trgTok': target_seq,
-                    'trgCode': datapoint['trgCode'],
+                    'trgTok': target_seq if target_format == TargetFormat.AST else datapoint['trgTok'],
+                    'trgCode': target_seq if target_format == TargetFormat.CODE else datapoint['trgCode'],
                     'testCtxCount': datapoint['testCtxCount'] if not remove_context_declarations else 0,
                     'ctxCount': datapoint['ctxCount'] if not remove_context_declarations else 0,
                 }))
@@ -106,7 +122,13 @@ def bpe_encode_dataset(
                     print(f'- Finished with item {counter}')
 
 
-def create_encoded_dataset_split(data_split_dir_path, bpe_dataset_path, vocab_path, data_split):
+def create_encoded_dataset_split(
+    data_split_dir_path,
+    bpe_dataset_path,
+    vocab_path,
+    data_split,
+    target_format=TargetFormat.AST,
+):
     if not os.path.exists(data_split_dir_path):
         os.makedirs(data_split_dir_path)
 
@@ -140,10 +162,16 @@ def create_encoded_dataset_split(data_split_dir_path, bpe_dataset_path, vocab_pa
             open(f'{data_split_dir_path}/test_code_tokens.jsonl', 'w+') as test_code_tokens_file:
         line_counter = 0
         for json_data in iterate_jsonl(dataset_file):
+            target_data = json_data[TargetFormat.get_key(target_format)]
+            if target_data is None:
+                continue
+
             src_data = [vocab.get_index(token) for token in json_data['src']]
             data = dump_jsonl([
                 src_data,
-                [sos_index] + [vocab.get_index(token) for token in json_data['trgTok']] + [eos_index],
+                [sos_index]
+                + [vocab.get_index(token) for token in target_data]
+                + [eos_index],
             ])
 
             if line_counter in train_lines:
@@ -167,11 +195,12 @@ def create_encoded_dataset_split(data_split_dir_path, bpe_dataset_path, vocab_pa
             line_counter += 1
 
 
-def encoded_predefined_dataset_split(
+def encode_predefined_dataset_split(
     data_split_dir_path,
     bpe_dataset_path,
     vocab_path,
     remove_context_declarations=False,
+    target_format=TargetFormat.AST,
 ):
     with \
             open(f'{data_split_dir_path}/train_ids.txt') as train_data_file, \
@@ -198,8 +227,12 @@ def encoded_predefined_dataset_split(
             open(f'{data_split_dir_path}/validate_code_tokens.jsonl', 'w+') as validate_code_tokens_file, \
             open(f'{data_split_dir_path}/test_code_tokens.jsonl', 'w+') as test_code_tokens_file:
         for json_data in iterate_jsonl(dataset_file):
+            target_data = json_data[TargetFormat.get_key(target_format)]
+            if target_data is None:
+                continue
+
             src_data = [vocab.get_index(token) for token in json_data['src']]
-            trg_data = [vocab.get_index(token) for token in json_data['trgTok']]
+            trg_data = [vocab.get_index(token) for token in target_data]
 
             if remove_context_declarations:
                 src_data = remove_context_declarations_from_ast_sequence(
@@ -275,11 +308,12 @@ def dump_jsonl(data):
     return json.dumps(data, separators=(',', ':')) + '\n'
 
 
-if __name__ == '__main__':
+def get_argpaser():
     parser = ArgumentParser()
     parser.add_argument('--bpe_vocab_size', type=int, default=16000)
     parser.add_argument('--input_dataset_path', type=str, required=True)
     parser.add_argument('--output_dir', type=str, required=True)
+    parser.add_argument('--data_split_dir_path', type=str, default=None)
     parser.add_argument('--tokenize_input_dataset_target_code', type=bool, default=False)
     parser.add_argument(
         '--target_format',
@@ -289,7 +323,11 @@ if __name__ == '__main__':
     )
     parser.add_argument('--max_source_seq_length', type=int, default=None)
     parser.add_argument('--max_target_seq_length', type=int, default=None)
-    args = parser.parse_args()
+    return parser
+
+
+if __name__ == '__main__':
+    args = get_argpaser().parse_args()
 
     for directory in [args.output_dir, f'{args.output_dir}/data', f'{args.output_dir}/model']:
         if not os.path.exists(directory):
@@ -300,7 +338,8 @@ if __name__ == '__main__':
     raw_vocab_path = f'{args.output_dir}/data/raw_ast_value_vocab.txt'
     bpe_vocab_path = f'{args.output_dir}/data/bpe_ast_vocab.txt'
     output_dataset_path = f'{args.output_dir}/data/bpe_gwt.jsonl'
-    data_split_dir_path = f'{args.output_dir}/data/bpe_ast_split'
+    if args.data_split_dir_path is None:
+        data_split_dir_path = f'{args.output_dir}/data/bpe_ast_split'
 
     if args.tokenize_input_dataset_target_code:
         print('Start tokenizing target data...')
@@ -308,7 +347,7 @@ if __name__ == '__main__':
         tokenize_target_data(args.input_dataset_path, tokenized_dataset_path)
         args.input_dataset_path = tokenized_dataset_path
     print('Start creating raw AST value vocab...')
-    create_ast_value_vocab(args.input_dataset_path, raw_vocab_path, only_values=True)
+    create_ast_value_vocab(args.input_dataset_path, raw_vocab_path, only_values=True, target_format=args.target_format)
     print('Start training BPE...')
     BpeProcessor.train(raw_vocab_path, model_name, model_path, args.bpe_vocab_size)
     print('Start creating BPE encoded dataset...')
@@ -318,6 +357,7 @@ if __name__ == '__main__':
         output_dataset_path,
         args.max_source_seq_length,
         args.max_target_seq_length,
+        target_format=args.target_format,
     )
     print('Start creating BPE encoded AST value vocab...')
     create_ast_value_vocab(
@@ -331,6 +371,21 @@ if __name__ == '__main__':
             BpeProcessor.NEW_LINE_TOKEN,
             BpeProcessor.UNKOWN_TOKEN,
         ],
+        target_format=args.target_format,
     )
-    print('Start creating data split')
-    create_encoded_dataset_split(data_split_dir_path, output_dataset_path, bpe_vocab_path, (.8, .1, .1))
+    print('Start creating/encoding data split')
+    if args.data_split_dir_path is None:
+        create_encoded_dataset_split(
+            data_split_dir_path,
+            output_dataset_path,
+            bpe_vocab_path,
+            (.8, .1, .1),
+            target_format=args.target_format,
+        )
+    else:
+        encode_predefined_dataset_split(
+            data_split_dir_path,
+            output_dataset_path,
+            bpe_vocab_path,
+            target_format=args.target_format,
+        )
