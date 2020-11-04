@@ -339,7 +339,7 @@ if __name__ == '__main__':
     bpe_vocab_path = f'{args.output_dir}/data/bpe_ast_vocab.txt'
     output_dataset_path = f'{args.output_dir}/data/bpe_gwt.jsonl'
     if args.data_split_dir_path is None:
-        data_split_dir_path = f'{args.output_dir}/data/bpe_ast_split'
+        args.data_split_dir_path = f'{args.output_dir}/data/bpe_ast_split'
 
     if args.tokenize_input_dataset_target_code:
         print('Start tokenizing target data...')
@@ -376,7 +376,7 @@ if __name__ == '__main__':
     print('Start creating/encoding data split')
     if args.data_split_dir_path is None:
         create_encoded_dataset_split(
-            data_split_dir_path,
+            args.data_split_dir_path,
             output_dataset_path,
             bpe_vocab_path,
             (.8, .1, .1),
@@ -384,7 +384,7 @@ if __name__ == '__main__':
         )
     else:
         encode_predefined_dataset_split(
-            data_split_dir_path,
+            args.data_split_dir_path,
             output_dataset_path,
             bpe_vocab_path,
             target_format=args.target_format,
