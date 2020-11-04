@@ -54,8 +54,14 @@ def objective(trial):
 
 
 def run_study():
-    study = optuna.create_study(direction='minimize')
-    study.optimize(objective, n_trials=50, timeout=24 * 60 * 60)
+    study = optuna.create_study(
+        study_name='hyperparameter_tuning',
+        storage='sqlite:///../optuna_cache.db',
+        load_if_exists=True,
+        direction='minimize',
+    )
+    study.optimize(objective, n_trials=50, timeout=24 * 60 * 60, catch=(Exception,))
+    print(study.trials_dataframe())
 
 
 if __name__ == '__main__':

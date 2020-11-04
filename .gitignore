@@ -5,4 +5,5 @@ venv
 lightning_logs
 data
 deploy.sh
+optuna_cache.db
 forward_ports.sh
