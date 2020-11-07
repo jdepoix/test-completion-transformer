@@ -36,6 +36,14 @@ def objective(trial):
     args.positional_encoding_dropout = trial.suggest_uniform('positional_encoding_dropout', 0.1, 0.5)
     args.transformer_dropout = trial.suggest_uniform('transformer_dropout', 0.1, 0.5)
 
+    args.version = (
+        f'lr{args.learning_rate}'
+        f'_ws{args.lr_warmup_steps}'
+        f'_agb{args.accumulate_grad_batches}'
+        f'_pd{args.positional_encoding_dropout}'
+        f'_td{args.transformer_dropout}'
+    )
+
     trainer = train(
         args,
         custom_callbacks=[
