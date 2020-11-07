@@ -1,3 +1,5 @@
+import os
+
 from argparse import ArgumentParser
 
 import pytorch_lightning as pl
@@ -13,6 +15,7 @@ def get_parser():
     parser.add_argument('--dataset_base_path', type=str, required=True)
     parser.add_argument('--tensorboard_dir', type=str, default='lightning_logs')
     parser.add_argument('--experiment_name', type=str, default='default')
+    parser.add_argument('--version', type=str, default=None)
     parser.add_argument('--invalidate_line_caches', action='store_true')
     parser.add_argument('--split', type=str, default='bpe_ast_split')
 
@@ -52,14 +55,19 @@ def train(args, custom_callbacks=None):
 
     logger = loggers.TensorBoardLogger(
         args.tensorboard_dir,
-        args.experiment_name,
+        name=args.experiment_name,
+        version=args.version,
     )
     logger.log_hyperparams(args)
 
+    checkpoint_dir = os.path.join(logger.log_dir, 'checkpoints')
+
     trainer = pl.Trainer.from_argparse_args(
         args,
+        resume_from_checkpoint=load_checkpoint_if_available(checkpoint_dir),
         logger=logger,
         checkpoint_callback=callbacks.ModelCheckpoint(
+            filepath=f'{checkpoint_dir}/{{epoch}}-{{val_loss}}',
             save_top_k=5,
             monitor='val_loss',
             mode='min',
@@ -69,6 +77,29 @@ def train(args, custom_callbacks=None):
 
     trainer.fit(model, data_module)
     return trainer
+
+
+def load_checkpoint_if_available(checkpoint_dir):
+    if not os.path.exists(checkpoint_dir):
+        return None
+
+    last_checkpoint = None
+    for checkpoint in os.scandir(checkpoint_dir):
+        if not checkpoint.name.endswith('.ckpt'):
+            continue
+
+        metrics = checkpoint.name.split('-')
+        if len(metrics) != 2 or not metrics[0].startswith('epoch='):
+            continue
+
+        epoch = int(metrics[0].replace('epoch=', ''))
+        if last_checkpoint is None or last_checkpoint['epoch'] < epoch:
+            last_checkpoint = {
+                'path': checkpoint.path,
+                'epoch': epoch
+            }
+
+    return last_checkpoint['path'] if last_checkpoint else None
 
 
 if __name__ == '__main__':
