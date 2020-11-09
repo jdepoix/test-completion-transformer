@@ -50,7 +50,7 @@ def objective(trial):
             PyTorchLightningPruningCallback(trial, monitor=relevant_metric),
             EarlyStopping(
                 monitor=relevant_metric,
-                min_delta=0.00,
+                min_delta=0.5,
                 patience=3,
                 verbose=False,
                 mode='min',
