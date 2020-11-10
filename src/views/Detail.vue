@@ -123,29 +123,31 @@
             </div>
           </div>
 
-          <div class="accordion mt-4" id="transformerPredictionAccordion" v-if="testFileRaw !== null && relatedFileRaw !== null">
-            <div class="card">
-              <div class="card-header p-1 clickable">
-                <button class="btn btn-block text-left font-weight-bold" type="button" data-toggle="collapse" data-target="#collapseTransformerPredictionAccordion" @click="loadTransformerPrediction()">
-                  Transformer
-                </button>
-              </div>
-              <div id="collapseTransformerPredictionAccordion" class="collapse" data-parent="#transformerPredictionAccordion">
-                <div class="card-body" v-if="testRelation.then_section.includes(`${this.testRelation.related_method}(`)">
-                  <span class="font-technical">WHEN call in THEN section!</span>
+          <template v-if="testFileRaw !== null && relatedFileRaw !== null">
+            <div v-for="(prediction, sampler) in transformerPredictions" :key="sampler" class="accordion mt-4" :id="'transformerPredictionAccordion' + sampler">
+              <div class="card">
+                <div class="card-header p-1 clickable">
+                  <button class="btn btn-block text-left font-weight-bold" type="button" data-toggle="collapse" :data-target="'#collapseTransformerPredictionAccordion' + sampler" @click="loadTransformerPrediction(sampler)">
+                    Transformer ({{ sampler }})
+                  </button>
                 </div>
-                <div class="card-body p-0" v-else-if="transformerPrediction != null && transformerPrediction.status == 'SUCCESS'">
-                  <pre v-highlight-syntax class="m-0"><code class="java" v-html="transformerPrediction.data"></code></pre>
-                </div>
-                <div class="card-body" v-else-if="transformerPrediction != null">
-                  <span class="font-technical">Prediction failed with {{ transformerPrediction.data }}</span>
-                </div>
-                <div class="card-body" v-else>
-                  <span class="font-technical">LOADING ...</span>
+                <div :id="'collapseTransformerPredictionAccordion' + sampler" class="collapse" :data-parent="'#transformerPredictionAccordion' + sampler">
+                  <div class="card-body" v-if="testRelation.then_section.includes(`${testRelation.related_method}(`)">
+                    <span class="font-technical">WHEN call in THEN section!</span>
+                  </div>
+                  <div class="card-body p-0" v-else-if="prediction != null && prediction.status == 'SUCCESS'">
+                    <pre v-highlight-syntax class="m-0"><code class="java" v-html="prediction.data"></code></pre>
+                  </div>
+                  <div class="card-body" v-else-if="prediction != null">
+                    <span class="font-technical">Prediction failed with {{ prediction.data }}</span>
+                  </div>
+                  <div class="card-body" v-else>
+                    <span class="font-technical">LOADING ...</span>
+                  </div>
                 </div>
               </div>
             </div>
-          </div>
+          </template>
         </div>
         
       </div>
@@ -172,6 +174,10 @@ export default {
     context: null,
     slmPrediction: null,
     transformerPrediction: null,
+    transformerPredictions: {
+      'GREEDY': null,
+      'NUCLEUS': null,
+    },
   }),
   directives: {
     HighlightSyntax: new HighlightSyntax()
@@ -255,8 +261,8 @@ export default {
           );
       }
     },
-    loadTransformerPrediction() {
-      if (!this.transformerPrediction && !this.testRelation.then_section.includes(`${this.testRelation.related_method}(`)) {
+    loadTransformerPrediction(sampler) {
+      if (!this.transformerPredictions[sampler] && !this.testRelation.then_section.includes(`${this.testRelation.related_method}(`)) {
         transformerPredictionApi.getPrediction(
           'default',
           this.testFileRaw,
@@ -266,9 +272,10 @@ export default {
           this.testRelation.related_class,
           this.testRelation.related_method_signature,
           this.testRelation.then_section_start_index,
+          sampler,
         ).then(
           response => {
-            this.transformerPrediction = response;
+            this.transformerPredictions[sampler] = response;
           }
         );
       }
