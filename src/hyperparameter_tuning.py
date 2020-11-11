@@ -30,11 +30,11 @@ def objective(trial):
     args = get_parser().parse_args()
     args.experiment_name = 'hyperparameter_tuning'
 
-    args.learning_rate = trial.suggest_categorical('learning_rate', [1e-3, 1e-4, 1e-5])
+    args.learning_rate = trial.suggest_categorical('learning_rate', [1e-2, 5e-3, 1e-3])
     args.lr_warmup_steps = trial.suggest_categorical('lr_warmup_steps', [500, 1000, 2000])
-    args.accumulate_grad_batches = trial.suggest_categorical('accumulate_grad_batches', [16, 32, 64, 128])
-    args.positional_encoding_dropout = trial.suggest_uniform('positional_encoding_dropout', 0.1, 0.5)
-    args.transformer_dropout = trial.suggest_uniform('transformer_dropout', 0.1, 0.5)
+    args.accumulate_grad_batches = trial.suggest_categorical('accumulate_grad_batches', [32, 64, 128])
+    args.positional_encoding_dropout = trial.suggest_uniform('positional_encoding_dropout', 0.1, 0.3)
+    args.transformer_dropout = trial.suggest_uniform('transformer_dropout', 0.1, 0.3)
 
     args.version = (
         f'lr{args.learning_rate}'
@@ -63,7 +63,7 @@ def objective(trial):
 
 def run_study():
     study = optuna.create_study(
-        study_name='hyperparameter_tuning',
+        study_name='hyperparameter_tuning_v2',
         storage='sqlite:///../optuna_cache.db',
         load_if_exists=True,
         direction='minimize',
