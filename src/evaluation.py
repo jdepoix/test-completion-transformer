@@ -128,7 +128,7 @@ class Evaluator():
             finally:
                 total_count += 1
 
-        rouge_results = Rouge(rouge_n=(2,)).evaluate_tokenized(
+        rouge_results = Rouge(rouge_n=(1, 2),).evaluate_tokenized(
             [[prediction] for prediction in predictions],
             [[target] for target in targets]
         )
@@ -145,6 +145,9 @@ class Evaluator():
             'rouge_l_precision': rouge_results['rouge-l']['p'],
             'rouge_l_recall': rouge_results['rouge-l']['r'],
             'rouge_l_fscore': rouge_results['rouge-l']['f'],
+            'rouge_1_precision': rouge_results['rouge-1']['p'],
+            'rouge_1_recall': rouge_results['rouge-1']['r'],
+            'rouge_1_fscore': rouge_results['rouge-1']['f'],
             'rouge_2_precision': rouge_results['rouge-2']['p'],
             'rouge_2_recall': rouge_results['rouge-2']['r'],
             'rouge_2_fscore': rouge_results['rouge-2']['f'],
