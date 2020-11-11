@@ -31,7 +31,7 @@ def objective(trial):
     args.experiment_name = 'hyperparameter_tuning'
 
     args.learning_rate = trial.suggest_categorical('learning_rate', [1e-2, 5e-3, 1e-3])
-    args.lr_warmup_steps = trial.suggest_categorical('lr_warmup_steps', [500, 1000, 2000])
+    args.lr_warmup_steps = trial.suggest_categorical('lr_warmup_steps', [1000, 2000, 4000])
     args.accumulate_grad_batches = trial.suggest_categorical('accumulate_grad_batches', [32, 64, 128])
     args.positional_encoding_dropout = trial.suggest_uniform('positional_encoding_dropout', 0.1, 0.3)
     args.transformer_dropout = trial.suggest_uniform('transformer_dropout', 0.1, 0.3)
