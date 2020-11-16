@@ -191,4 +191,3 @@ class GwtSectionPredictionTransformer(pl.LightningModule):
                 }
             ]
         )
-
