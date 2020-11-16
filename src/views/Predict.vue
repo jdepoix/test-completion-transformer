@@ -66,7 +66,9 @@
           <select v-model="sampler" class="custom-select">
             <option disabled>Select sampler...</option>
             <option value="NUCLEUS">Nucleus</option>
+            <option value="ONLY_KNOWN_IDENTIFIERS_NUCLEUS">Nucleus (favor known identifiers)</option>
             <option value="GREEDY">Greedy</option>
+            <option value="ONLY_KNOWN_IDENTIFIERS_GREEDY">Greedy (favor known identifiers)</option>
           </select>
           <div class="input-group-append">
             <button 

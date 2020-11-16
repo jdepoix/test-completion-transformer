@@ -177,6 +177,8 @@ export default {
     transformerPredictions: {
       'GREEDY': null,
       'NUCLEUS': null,
+      'ONLY_KNOWN_IDENTIFIERS_NUCLEUS': null,
+      'ONLY_KNOWN_IDENTIFIERS_GREEDY': null,
     },
   }),
   directives: {
@@ -235,12 +237,15 @@ export default {
       });
     },
     scrollHighlightedMethodIntoView(parentId) {
-      setTimeout(() => {
-        let parent = document.getElementById(parentId);
-        if (parent) {
-          parent.getElementsByClassName('highlight-method').forEach(element => parent.scrollTop = element.offsetTop - 70);
-        }
-      }, 1);
+      setTimeout(
+        () => {
+          let parent = document.getElementById(parentId);
+          if (parent) {
+            parent.getElementsByClassName('highlight-method').forEach(element => parent.scrollTop = element.offsetTop - 70);
+          }
+        }, 
+        1,
+      );
     },
     async getHighlightedFileContent(filepath) {
       return await repoFileApi.getFileContent(filepath);
