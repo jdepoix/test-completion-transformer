@@ -203,7 +203,7 @@ if __name__ == '__main__':
     Evaluator(
         GwtSectionPredictionTransformer,
         sampling.Loader(vocab).load_sampler(args.sampler),
-        args.tensorboard_log_dir,
+        args.evaluation_dataset_path,
         vocab,
         bpe.BpeProcessor(args.bpe_model_path),
         AstSequentializationApiClient(args.sequentialization_api_host, args.sequentialization_api_port),
