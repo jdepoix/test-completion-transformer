@@ -10,7 +10,8 @@ from ast_sequentialization_api_client import AstSequentializationApiClient
 from model import GwtSectionPredictionTransformer
 from data import Vocab
 from bpe import BpeProcessor
-from predict import PredictionPipeline, ThenSectionPredictor, NucleusSampler, GreedySampler, OnlyKnownIdentifiersSampler
+from predict import PredictionPipeline, ThenSectionPredictor
+import sampling
 
 app = Flask(__name__)
 cors = CORS(app)
@@ -23,7 +24,7 @@ class PredictionApi():
 
     def __init__(self, data_dir, model_dir, max_prediction_length):
         bpe_processor = BpeProcessor(f'{data_dir}/model/ast_values.model')
-        self._vocab = Vocab(f'{data_dir}/data/bpe_ast_vocab.txt')
+        vocab = Vocab(f'{data_dir}/data/bpe_ast_vocab.txt')
         sequentialization_client = AstSequentializationApiClient('localhost', 5555)
         device = 'cuda' if torch.cuda.is_available() else 'cpu'
         # TODO REMOVE!!!
@@ -32,16 +33,17 @@ class PredictionApi():
             model_file.split('.ckpt')[0]: PredictionPipeline(
                 ThenSectionPredictor(
                     GwtSectionPredictionTransformer.load_from_checkpoint(f'{model_dir}/{model_file}').to(device).eval(),
-                    self._vocab.get_index(self._vocab.SOS_TOKEN),
-                    self._vocab.get_index(self._vocab.EOS_TOKEN),
+                    vocab.get_index(vocab.SOS_TOKEN),
+                    vocab.get_index(vocab.EOS_TOKEN),
                     max_prediction_length,
                 ),
                 bpe_processor,
-                self._vocab,
+                vocab,
                 sequentialization_client
             )
             for model_file in os.listdir(model_dir) if model_file.endswith('.ckpt')
         }
+        self._sampler_loader = sampling.Loader(vocab)
 
     def predict(
         self,
@@ -66,7 +68,7 @@ class PredictionApi():
                     related_class_name,
                     related_method_signature,
                     then_section_start_index,
-                    self._load_sampler(sampler),
+                    self._sampler_loader.load_sampler(sampler),
                 )
             }
         except Exception as exception:
@@ -75,16 +77,6 @@ class PredictionApi():
                 'status': PredictionApi.Status.ERROR,
                 'data': type(exception).__name__
             }
-
-    def _load_sampler(self, sampler_id):
-        if sampler_id == 'ONLY_KNOWN_IDENTIFIERS_NUCLEUS':
-            return lambda seq: OnlyKnownIdentifiersSampler(self._vocab, seq, NucleusSampler())
-        if sampler_id == 'ONLY_KNOWN_IDENTIFIERS_GREEDY':
-            return lambda seq: OnlyKnownIdentifiersSampler(self._vocab, seq, GreedySampler())
-        if sampler_id == 'NUCLEUS':
-            return lambda _: NucleusSampler()
-        if sampler_id == 'GREEDY':
-            return lambda _: GreedySampler()
 
 
 api = PredictionApi(os.environ['DATA_DIR'], os.environ['MODEL_DIR'], 512)
