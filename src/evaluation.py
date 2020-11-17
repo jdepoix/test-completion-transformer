@@ -1,5 +1,4 @@
 import os
-import sys
 import json
 import traceback
 from concurrent.futures.process import ProcessPoolExecutor
@@ -9,6 +8,8 @@ from argparse import ArgumentParser
 import torch
 from torch.utils import tensorboard
 
+import pytorch_lightning as pl
+
 import javalang
 
 from nltk.translate.bleu_score import corpus_bleu
@@ -17,6 +18,7 @@ from rouge_metric import PyRouge as Rouge
 
 import bpe
 import data
+import sampling
 from ast_sequentialization_api_client import AstSequentializationApiClient
 from model import GwtSectionPredictionTransformer
 from predict import PredictionPipeline, ThenSectionPredictor
@@ -26,6 +28,7 @@ class Evaluator():
     def __init__(
         self,
         model_class,
+        sampler,
         dataset_path,
         vocab,
         bpe_processor,
@@ -36,6 +39,7 @@ class Evaluator():
         log_interval=1000,
     ):
         self._model_class = model_class
+        self._sampler = sampler
         self._dataset_path = dataset_path
         self._vocab = vocab
         self._bpe_processor = bpe_processor
@@ -49,14 +53,26 @@ class Evaluator():
             torch.multiprocessing.set_start_method('spawn')
         self._log_interval = log_interval
 
-    def evaluate(self, tensorboard_log_dir):
+    def evaluate(self, tensorboard_log_dir, max_number_of_checkpoints):
         with tensorboard.SummaryWriter(tensorboard_log_dir) as writer:
-            for checkpoint in os.scandir(f'{tensorboard_log_dir}/checkpoints'):
-                if checkpoint.path.endswith('.ckpt'):
-                    print(f'{"=" * 30} {checkpoint.path} {"=" * 30}')
-                    results = self._evaluate_checkpoint(checkpoint.path)
-                    print(results)
-                    self._report_results(writer, checkpoint.path, results)
+            for checkpoint in self._find_relevant_checkpoints(tensorboard_log_dir, max_number_of_checkpoints):
+                print(f'{"=" * 30} {checkpoint} {"=" * 30}')
+                results = self._evaluate_checkpoint(checkpoint)
+                print(results)
+                self._report_results(writer, checkpoint, results)
+
+    def _find_relevant_checkpoints(self, log_dir, max_number_of_checkpoints):
+        scores = []
+        for checkpoint in os.scandir(f'{log_dir}/checkpoints'):
+            if checkpoint.name.endswith('.ckpt') and 'tmp' not in checkpoint.name:
+                scores.append((
+                    torch.load(
+                        checkpoint.path,
+                        map_location=torch.device('cpu')
+                    )['callbacks'][pl.callbacks.model_checkpoint.ModelCheckpoint]['best_model_score'].item(),
+                    checkpoint.path,
+                ))
+        return [item[1] for item in sorted(scores, key=lambda a: a[0])[:max_number_of_checkpoints]]
 
     def _init_prediction_pipeline(self, checkpoint_path):
         process_id = int(multiprocessing.current_process().name.split('-')[-1])
@@ -91,7 +107,7 @@ class Evaluator():
 
     def _evaluate_datapoint(self, json_line, index):
         source, target = json.loads(json_line)
-        prediction = Evaluator.prediction_pipeline.execute_on_encoded(source)
+        prediction = Evaluator.prediction_pipeline.execute_on_encoded(source, sampler=self._sampler)
         tokenized_prediction = [token.value for token in javalang.tokenizer.tokenize(prediction)]
         if index % self._log_interval == 0:
             print(f'FINISHED evaluating {index}')
@@ -171,20 +187,28 @@ if __name__ == '__main__':
     parser.add_argument('--num_workers', type=int, required=True)
     parser.add_argument('--sequentialization_api_port', type=int, default=5555)
     parser.add_argument('--sequentialization_api_host', type=str, default='localhost')
+    parser.add_argument('--max_prediction_length', type=int, default=512)
+    parser.add_argument('--max_number_of_checkpoints', type=int, default=5)
+    parser.add_argument('--sampler', type=str, default=sampling.Type.GREEDY, choices=(
+        sampling.Type.GREEDY,
+        sampling.Type.ONLY_KNOWN_IDENTIFIERS_GREEDY,
+        sampling.Type.NUCLEUS,
+        sampling.Type.ONLY_KNOWN_IDENTIFIERS_NUCLEUS,
+    ))
     parser.add_argument('--device', type=str, default='cuda', choices=('cpu', 'cuda',))
     parser.add_argument('--log_interval', type=int, default=1000)
     args = parser.parse_args()
 
-    # TODO remove
-    from DEPRECATED_model import GwtSectionPredictionTransformer
+    vocab = data.Vocab(args.vocab_path)
     Evaluator(
         GwtSectionPredictionTransformer,
+        sampling.Loader(vocab).load_sampler(args.sampler),
         args.tensorboard_log_dir,
-        data.Vocab(args.vocab_path),
+        vocab,
         bpe.BpeProcessor(args.bpe_model_path),
         AstSequentializationApiClient(args.sequentialization_api_host, args.sequentialization_api_port),
-        512,
+        args.max_prediction_length,
         args.num_workers,
         args.device,
         args.log_interval,
-    ).evaluate(args.tensorboard_log_dir)
+    ).evaluate(args.tensorboard_log_dir, args.max_number_of_checkpoints)
