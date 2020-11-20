@@ -28,7 +28,7 @@ class Evaluator():
     def __init__(
         self,
         model_class,
-        sampler,
+        sampler_type,
         dataset_path,
         vocab,
         bpe_processor,
@@ -39,7 +39,7 @@ class Evaluator():
         log_interval=1000,
     ):
         self._model_class = model_class
-        self._sampler = sampler
+        self._sampler_type = sampler_type
         self._dataset_path = dataset_path
         self._vocab = vocab
         self._bpe_processor = bpe_processor
@@ -65,12 +65,13 @@ class Evaluator():
         scores = []
         for checkpoint in os.scandir(f'{log_dir}/checkpoints'):
             if checkpoint.name.endswith('.ckpt') and 'tmp' not in checkpoint.name:
-                scores.append((
-                    torch.load(
-                        checkpoint.path,
-                        map_location=torch.device('cpu')
-                    )['callbacks'][pl.callbacks.model_checkpoint.ModelCheckpoint]['best_model_score'].item(),
+                checkpoint_data = torch.load(
                     checkpoint.path,
+                    map_location=torch.device('cpu')
+                )['callbacks'][pl.callbacks.model_checkpoint.ModelCheckpoint]
+                scores.append((
+                    checkpoint_data['best_model_score'].item(),
+                    checkpoint_data['best_model_path'],
                 ))
         return [item[1] for item in sorted(scores, key=lambda a: a[0])[:max_number_of_checkpoints]]
 
@@ -107,7 +108,10 @@ class Evaluator():
 
     def _evaluate_datapoint(self, json_line, index):
         source, target = json.loads(json_line)
-        prediction = Evaluator.prediction_pipeline.execute_on_encoded(source, sampler=self._sampler)
+        prediction = Evaluator.prediction_pipeline.execute_on_encoded(
+            source,
+            sampler=sampling.Loader(self._vocab).load_sampler(self._sampler_type)
+        )
         tokenized_prediction = [token.value for token in javalang.tokenizer.tokenize(prediction)]
         if index % self._log_interval == 0:
             print(f'FINISHED evaluating {index}')
@@ -202,7 +206,7 @@ if __name__ == '__main__':
     vocab = data.Vocab(args.vocab_path)
     Evaluator(
         GwtSectionPredictionTransformer,
-        sampling.Loader(vocab).load_sampler(args.sampler),
+        args.sampler,
         args.evaluation_dataset_path,
         vocab,
         bpe.BpeProcessor(args.bpe_model_path),
