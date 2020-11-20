@@ -214,10 +214,10 @@ def encode_predefined_dataset_split(
     sos_index = vocab.get_index(Vocab.SOS_TOKEN)
     eos_index = vocab.get_index(Vocab.EOS_TOKEN)
     if remove_context_declarations:
-        ctx_open_id = vocab.get_index(ast_sequence.Token.OPEN_CONTEXT)
-        ctx_close_id = vocab.get_index(ast_sequence.Token.CLOSE_CONTEXT)
-        test_ctx_open_id = vocab.get_index(ast_sequence.Token.OPEN_TEST_CONTEXT)
-        test_ctx_close_id = vocab.get_index(ast_sequence.Token.CLOSE_TEST_CONTEXT)
+        ctx_open_id = vocab.get_index(ast_sequence.Token.CONTEXT_OPEN)
+        ctx_close_id = vocab.get_index(ast_sequence.Token.CONTEXT_CLOSE)
+        test_ctx_open_id = vocab.get_index(ast_sequence.Token.TEST_CONTEXT_OPEN)
+        test_ctx_close_id = vocab.get_index(ast_sequence.Token.TEST_CONTEXT_CLOSE)
 
     with \
             open(bpe_dataset_path) as dataset_file, \
@@ -327,6 +327,13 @@ def get_argpaser():
 
 
 if __name__ == '__main__':
+    # TODO should I tokenize target code before bpe encoding it?
+    # TEST_NAME_MARK = '<[TEST_NAME]>'
+    # TEST_BODY_MARK = '<[TEST_BODY]>'
+    # TEST_CONTEXT_DECLARATION_MARK = '<[TEST_CONTEXT_DECLARATION]>'
+    # WHEN_DECLARATION_MARK = '<[WHEN_DECLARATION]>'
+    # CONTEXT_DECLARATION_MARK = '<[CONTEXT_DECLARATION]>'
+
     args = get_argpaser().parse_args()
 
     for directory in [args.output_dir, f'{args.output_dir}/data', f'{args.output_dir}/model']:
@@ -338,8 +345,8 @@ if __name__ == '__main__':
     raw_vocab_path = f'{args.output_dir}/data/raw_ast_value_vocab.txt'
     bpe_vocab_path = f'{args.output_dir}/data/bpe_ast_vocab.txt'
     output_dataset_path = f'{args.output_dir}/data/bpe_gwt.jsonl'
-    if args.data_split_dir_path is None:
-        args.data_split_dir_path = f'{args.output_dir}/data/bpe_ast_split'
+    data_split_dir_path = args.data_split_dir_path \
+        if args.data_split_dir_path else f'{args.output_dir}/data/bpe_ast_split'
 
     if args.tokenize_input_dataset_target_code:
         print('Start tokenizing target data...')
@@ -376,7 +383,7 @@ if __name__ == '__main__':
     print('Start creating/encoding data split')
     if args.data_split_dir_path is None:
         create_encoded_dataset_split(
-            args.data_split_dir_path,
+            data_split_dir_path,
             output_dataset_path,
             bpe_vocab_path,
             (.8, .1, .1),
@@ -384,7 +391,7 @@ if __name__ == '__main__':
         )
     else:
         encode_predefined_dataset_split(
-            args.data_split_dir_path,
+            data_split_dir_path,
             output_dataset_path,
             bpe_vocab_path,
             target_format=args.target_format,
