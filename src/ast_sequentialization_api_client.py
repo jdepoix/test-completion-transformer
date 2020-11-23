@@ -11,14 +11,16 @@ class AstSequentializationApiClient():
         SUCESS = 'SUCCESSFUL'
 
     class _Command():
-        CREATE_TEST_DECLARATION_SEQUENCE = 'CREATE_TEST_DECLARATION_SEQUENCE'
+        CREATE_TEST_DECLARATION = 'CREATE_TEST_DECLARATION'
+        CREATE_TEST_DECLARATION_AST_SEQUENCE = 'CREATE_TEST_DECLARATION_AST_SEQUENCE'
         THEN_SEQUENCE_TO_CODE = 'THEN_SEQUENCE_TO_CODE'
+        CHECK_PARSABILITY = 'CHECK_PARSABILITY'
 
     def __init__(self, address, port):
         self._address = address
         self._port = port
 
-    def create_test_declaration_sequence(
+    def create_test_declaration(
         self,
         test_file_content,
         test_class_name,
@@ -29,7 +31,30 @@ class AstSequentializationApiClient():
         then_section_start_index=None,
     ):
         return self._send_message({
-            'command': self._Command.CREATE_TEST_DECLARATION_SEQUENCE,
+            'command': self._Command.CREATE_TEST_DECLARATION,
+            'data': {
+                'testFileContent': test_file_content,
+                'testClassName': test_class_name,
+                'testMethodSignature': test_method_signature,
+                'relatedFileContent': related_file_content,
+                'relatedClassName': related_class_name,
+                'relatedMethodSignature': related_method_signature,
+                'thenSectionStartIndex': then_section_start_index,
+            }
+        })
+
+    def create_test_declaration_ast_sequence(
+        self,
+        test_file_content,
+        test_class_name,
+        test_method_signature,
+        related_file_content,
+        related_class_name,
+        related_method_signature,
+        then_section_start_index=None,
+    ):
+        return self._send_message({
+            'command': self._Command.CREATE_TEST_DECLARATION_AST_SEQUENCE,
             'data': {
                 'testFileContent': test_file_content,
                 'testClassName': test_class_name,
@@ -45,6 +70,12 @@ class AstSequentializationApiClient():
         return self._send_message({
             'command': self._Command.THEN_SEQUENCE_TO_CODE,
             'data': sequence
+        })
+
+    def check_parsability(self, code):
+        return self._send_message({
+            'command': self._Command.CHECK_PARSABILITY,
+            'data': code
         })
 
     def _open_socket(self):
