@@ -22,6 +22,7 @@ import sampling
 from ast_sequentialization_api_client import AstSequentializationApiClient
 from model import GwtSectionPredictionTransformer
 from predict import PredictionPipeline, ThenSectionPredictor
+from source_code import AstSequenceProcessor
 
 
 class Evaluator():
@@ -32,7 +33,7 @@ class Evaluator():
         dataset_path,
         vocab,
         bpe_processor,
-        sequentialization_client,
+        source_code_processor,
         max_prediction_length,
         num_workers,
         device,
@@ -43,7 +44,7 @@ class Evaluator():
         self._dataset_path = dataset_path
         self._vocab = vocab
         self._bpe_processor = bpe_processor
-        self._sequentialization_client = sequentialization_client
+        self._source_code_processor = source_code_processor
         self._max_prediction_length = max_prediction_length
         self._num_worker = num_workers
         self._devices = [device] if device == 'cpu' else [
@@ -89,9 +90,9 @@ class Evaluator():
                 self._vocab.get_index(self._vocab.EOS_TOKEN),
                 self._max_prediction_length,
             ),
+            self._source_code_processor,
             self._bpe_processor,
             self._vocab,
-            self._sequentialization_client,
         )
 
     def _evaluate_checkpoint(self, checkpoint_path):
@@ -210,7 +211,9 @@ if __name__ == '__main__':
         args.evaluation_dataset_path,
         vocab,
         bpe.BpeProcessor(args.bpe_model_path),
-        AstSequentializationApiClient(args.sequentialization_api_host, args.sequentialization_api_port),
+        AstSequenceProcessor(
+            AstSequentializationApiClient(args.sequentialization_api_host, args.sequentialization_api_port)
+        ),
         args.max_prediction_length,
         args.num_workers,
         args.device,

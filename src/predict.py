@@ -57,11 +57,11 @@ class PredictionPipeline():
     class ContainsUnknownToken(Exception):
         pass
 
-    def __init__(self, predictor, bpe_processor, vocab, sequentialization_client):
+    def __init__(self, predictor, source_code_processor, bpe_processor, vocab):
         self._predictor = predictor
+        self._source_code_processor = source_code_processor
         self._bpe_processor = bpe_processor
         self._vocab = vocab
-        self._sequentialization_client = sequentialization_client
 
     def execute(
         self,
@@ -74,7 +74,7 @@ class PredictionPipeline():
         then_section_start_index=None,
         sampler=None,
     ):
-        test_declaration_sequence = self._sequentialization_client.create_test_declaration_sequence(
+        test_declaration_sequence = self._source_code_processor.encode(
             test_file_content,
             test_class_name,
             test_method_signature,
@@ -93,4 +93,4 @@ class PredictionPipeline():
         if self._bpe_processor.UNKOWN_TOKEN in decoded_prediction:
             raise PredictionPipeline.ContainsUnknownToken()
         decoded_sequence = self._bpe_processor.decode(decoded_prediction)
-        return self._sequentialization_client.parse_then_sequence_to_code(decoded_sequence)
+        return self._source_code_processor.decode(decoded_sequence)

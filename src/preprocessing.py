@@ -5,9 +5,9 @@ from argparse import ArgumentParser
 
 from torch.utils.data import random_split
 
-from javalang import tokenizer
-
 import ast_sequence
+import source_code
+from source_code import TestDeclaration
 from bpe import BpeProcessor
 from data import Vocab
 
@@ -17,11 +17,19 @@ class TargetFormat():
     CODE = 'CODE'
 
     @staticmethod
-    def get_key(format):
+    def get_source_key(format):
+        if format == TargetFormat.AST:
+            return 'src'
+        if format == TargetFormat.CODE:
+            return 'srcCodeTok'
+        raise ValueError('invalid format')
+
+    @staticmethod
+    def get_target_key(format):
         if format == TargetFormat.AST:
             return 'trgTok'
         if format == TargetFormat.CODE:
-            return 'trgCode'
+            return 'trgCodeTok'
         raise ValueError('invalid format')
 
 
@@ -29,18 +37,19 @@ def create_ast_value_vocab(dataset_path, output_path, only_values, special_words
     vocab = set()
     with open(dataset_path) as dataset_file:
         for datapoint in iterate_jsonl(dataset_file):
-            target_data = datapoint[TargetFormat.get_key(target_format)]
-            if target_data is None:
-                continue
+            source_data = datapoint[TargetFormat.get_source_key(target_format)]
+            target_data = datapoint[TargetFormat.get_target_key(target_format)]
 
-            vocab.update(
-                token.replace('\n', BpeProcessor.NEW_LINE_TOKEN)
-                for token in datapoint['src'] if not only_values or ast_sequence.Token.is_value(token)
-            )
-            vocab.update(
-                token.replace('\n', BpeProcessor.NEW_LINE_TOKEN)
-                for token in target_data if not only_values or ast_sequence.Token.is_value(token)
-            )
+            if source_data is not None:
+                vocab.update(
+                    token.replace('\n', BpeProcessor.NEW_LINE_TOKEN)
+                    for token in source_data if not only_values or ast_sequence.Token.is_value(token)
+                )
+            if target_data is not None:
+                vocab.update(
+                    token.replace('\n', BpeProcessor.NEW_LINE_TOKEN)
+                    for token in target_data if not only_values or ast_sequence.Token.is_value(token)
+                )
     if special_words:
         for word in special_words:
             vocab.discard(word)
@@ -83,34 +92,54 @@ def bpe_encode_dataset(
     remove_context_declarations=False,
     log_interval=1000,
     target_format=TargetFormat.AST,
+    ast_model_path=None,
 ):
     bpe_processor = BpeProcessor(model_path)
+    if target_format == TargetFormat.CODE:
+        if ast_model_path is None:
+            raise ValueError('AST BPE model path needs to be provided when target format is CODE!')
+        ast_bpe_processor = BpeProcessor(ast_model_path)
     visited = set()
     counter = 0
+    duplicate_counter = 0
     with open(dataset_path) as dataset_file, open(encoded_dataset_path, 'w+') as output_dataset:
         for datapoint in iterate_jsonl(dataset_file):
-            target_data = datapoint[TargetFormat.get_key(target_format)]
-            if target_data is None:
+            source_data = datapoint[TargetFormat.get_source_key(target_format)]
+            target_data = datapoint[TargetFormat.get_target_key(target_format)]
+            if source_data is None or target_data is None:
                 continue
-            source_seq = bpe_processor.encode(datapoint['src'])
+
+            source_seq = bpe_processor.encode(source_data)
             target_seq = bpe_processor.encode(target_data)
+
+            if target_format == TargetFormat.AST:
+                source_seq_length = len(source_seq)
+                target_seq_length = len(target_seq)
+            else:
+                source_seq_length = len(
+                    ast_bpe_processor.encode(datapoint[TargetFormat.get_source_key(TargetFormat.AST)])
+                )
+                target_seq_length = len(
+                    ast_bpe_processor.encode(datapoint[TargetFormat.get_target_key(TargetFormat.AST)])
+                )
             if (
-                (max_source_seq_length is None or len(source_seq) <= max_source_seq_length)
-                and (max_target_seq_length is None or len(target_seq) <= max_target_seq_length)
+                (max_source_seq_length is None or source_seq_length <= max_source_seq_length)
+                and (max_target_seq_length is None or target_seq_length <= max_target_seq_length)
             ):
                 unique_data = (tuple(source_seq), tuple(target_seq))
                 if unique_data in visited:
+                    duplicate_counter += 1
                     continue
 
                 if remove_context_declarations:
                     source_seq = remove_context_declarations_from_ast_sequence(source_seq)
-                    target_seq = remove_context_declarations_from_ast_sequence(target_seq)
 
                 output_dataset.write(dump_jsonl({
                     'id': datapoint['id'],
-                    'src': source_seq,
+                    'src': source_seq if target_format == TargetFormat.AST else datapoint['src'],
+                    'srcCodeTok': source_seq if target_format == TargetFormat.CODE else datapoint['srcCodeTok'],
                     'trgTok': target_seq if target_format == TargetFormat.AST else datapoint['trgTok'],
-                    'trgCode': target_seq if target_format == TargetFormat.CODE else datapoint['trgCode'],
+                    'trgCodeTok': target_seq if target_format == TargetFormat.CODE else datapoint['trgCodeTok'],
                     'testCtxCount': datapoint['testCtxCount'] if not remove_context_declarations else 0,
                     'ctxCount': datapoint['ctxCount'] if not remove_context_declarations else 0,
                 }))
@@ -120,6 +149,7 @@ def bpe_encode_dataset(
 
                 if counter % log_interval == 0:
                     print(f'- Finished with item {counter}')
+    print(f'-> Filtered duplicates: {duplicate_counter}')
 
 
 def create_encoded_dataset_split(
@@ -162,11 +192,12 @@ def create_encoded_dataset_split(
             open(f'{data_split_dir_path}/test_code_tokens.jsonl', 'w+') as test_code_tokens_file:
         line_counter = 0
         for json_data in iterate_jsonl(dataset_file):
-            target_data = json_data[TargetFormat.get_key(target_format)]
-            if target_data is None:
+            source_data = json_data[TargetFormat.get_source_key(target_format)]
+            target_data = json_data[TargetFormat.get_target_key(target_format)]
+            if source_data is None or target_data is None:
                 continue
 
-            src_data = [vocab.get_index(token) for token in json_data['src']]
+            src_data = [vocab.get_index(token) for token in source_data]
             data = dump_jsonl([
                 src_data,
                 [sos_index]
@@ -178,7 +209,8 @@ def create_encoded_dataset_split(
                 train_data_file.write(data)
                 train_data_ids_file.write(json_data['id'] + '\n')
             else:
-                code_tokens = dump_jsonl([src_data, json_data['trgCode']]) if json_data['trgCode'] is not None else None
+                code_tokens = dump_jsonl([src_data, json_data['trgCodeTok']]) \
+                    if json_data['trgCodeTok'] is not None else None
                 if line_counter in validation_lines:
                     validate_data_file.write(data)
                     validate_data_ids_file.write(json_data['id'] + '\n')
@@ -227,23 +259,21 @@ def encode_predefined_dataset_split(
             open(f'{data_split_dir_path}/validate_code_tokens.jsonl', 'w+') as validate_code_tokens_file, \
             open(f'{data_split_dir_path}/test_code_tokens.jsonl', 'w+') as test_code_tokens_file:
         for json_data in iterate_jsonl(dataset_file):
-            target_data = json_data[TargetFormat.get_key(target_format)]
-            if target_data is None:
+            source_data = json_data[TargetFormat.get_source_key(target_format)]
+            target_data = json_data[TargetFormat.get_target_key(target_format)]
+            if source_data is None or target_data is None:
                 continue
 
-            src_data = [vocab.get_index(token) for token in json_data['src']]
+            src_data = [vocab.get_index(token) for token in source_data]
             trg_data = [vocab.get_index(token) for token in target_data]
 
             if remove_context_declarations:
+                if target_format == TargetFormat.CODE:
+                    raise NotImplementedError(
+                        'removing context declarations is not supported for target format CODE yet'
+                    )
                 src_data = remove_context_declarations_from_ast_sequence(
                     src_data,
-                    ctx_open_id,
-                    ctx_close_id,
-                    test_ctx_open_id,
-                    test_ctx_close_id,
-                )
-                trg_data = remove_context_declarations_from_ast_sequence(
-                    trg_data,
                     ctx_open_id,
                     ctx_close_id,
                     test_ctx_open_id,
@@ -258,7 +288,8 @@ def encode_predefined_dataset_split(
             if json_data['id'] in train_ids:
                 train_data_file.write(data)
             else:
-                code_tokens = dump_jsonl([src_data, json_data['trgCode']]) if json_data['trgCode'] is not None else None
+                code_tokens = dump_jsonl([src_data, json_data['trgCodeTok']]) \
+                    if json_data['trgCodeTok'] is not None else None
                 if json_data['id'] in validate_ids:
                     validate_data_file.write(data)
                     if code_tokens:
@@ -277,8 +308,9 @@ def tokenize_target_data(input_dataset_path, output_path):
             tokenized_dataset.write(dump_jsonl({
                 'id': datapoint['id'],
                 'src': datapoint['src'],
+                'srcCodeTok': TestDeclaration.tokenize(datapoint['testDec']),
                 'trgTok': datapoint['trgTok'],
-                'trgCode': tokenize_code(datapoint['trgCode']),
+                'trgCodeTok': tokenize_code_safe(datapoint['trgCode']),
                 'testCtxCount': datapoint['testCtxCount'],
                 'ctxCount': datapoint['ctxCount'],
             }))
@@ -297,9 +329,9 @@ def iterate_jsonl(file):
         yield json.loads(json_line)
 
 
-def tokenize_code(code):
+def tokenize_code_safe(code):
     try:
-        return [token.value for token in tokenizer.tokenize(code)]
+        return source_code.tokenize(code)
     except:
         return None
 
@@ -314,7 +346,7 @@ def get_argpaser():
     parser.add_argument('--input_dataset_path', type=str, required=True)
     parser.add_argument('--output_dir', type=str, required=True)
     parser.add_argument('--data_split_dir_path', type=str, default=None)
-    parser.add_argument('--tokenize_input_dataset_target_code', type=bool, default=False)
+    parser.add_argument('--tokenize_input_dataset', type=bool, default=False)
     parser.add_argument(
         '--target_format',
         type=str,
@@ -323,17 +355,11 @@ def get_argpaser():
     )
     parser.add_argument('--max_source_seq_length', type=int, default=None)
     parser.add_argument('--max_target_seq_length', type=int, default=None)
+    parser.add_argument('--ast_model_path', type=str, default=None)
     return parser
 
 
 if __name__ == '__main__':
-    # TODO should I tokenize target code before bpe encoding it?
-    # TEST_NAME_MARK = '<[TEST_NAME]>'
-    # TEST_BODY_MARK = '<[TEST_BODY]>'
-    # TEST_CONTEXT_DECLARATION_MARK = '<[TEST_CONTEXT_DECLARATION]>'
-    # WHEN_DECLARATION_MARK = '<[WHEN_DECLARATION]>'
-    # CONTEXT_DECLARATION_MARK = '<[CONTEXT_DECLARATION]>'
-
     args = get_argpaser().parse_args()
 
     for directory in [args.output_dir, f'{args.output_dir}/data', f'{args.output_dir}/model']:
@@ -348,8 +374,8 @@ if __name__ == '__main__':
     data_split_dir_path = args.data_split_dir_path \
         if args.data_split_dir_path else f'{args.output_dir}/data/bpe_ast_split'
 
-    if args.tokenize_input_dataset_target_code:
-        print('Start tokenizing target data...')
+    if args.tokenize_input_dataset:
+        print('Start tokenizing dataset...')
         tokenized_dataset_path = f'{args.input_dataset_path.split(".jsonl")[0]}_tokenized.jsonl'
         tokenize_target_data(args.input_dataset_path, tokenized_dataset_path)
         args.input_dataset_path = tokenized_dataset_path
@@ -365,6 +391,7 @@ if __name__ == '__main__':
         args.max_source_seq_length,
         args.max_target_seq_length,
         target_format=args.target_format,
+        ast_model_path=args.ast_model_path,
     )
     print('Start creating BPE encoded AST value vocab...')
     create_ast_value_vocab(

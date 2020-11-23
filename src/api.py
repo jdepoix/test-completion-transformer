@@ -7,6 +7,7 @@ from flask_cors import CORS
 import torch
 
 from ast_sequentialization_api_client import AstSequentializationApiClient
+from source_code import AstSequenceProcessor
 from model import GwtSectionPredictionTransformer
 from data import Vocab
 from bpe import BpeProcessor
@@ -37,9 +38,9 @@ class PredictionApi():
                     vocab.get_index(vocab.EOS_TOKEN),
                     max_prediction_length,
                 ),
+                AstSequenceProcessor(sequentialization_client),
                 bpe_processor,
                 vocab,
-                sequentialization_client
             )
             for model_file in os.listdir(model_dir) if model_file.endswith('.ckpt')
         }
