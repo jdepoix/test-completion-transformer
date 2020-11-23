@@ -54,6 +54,7 @@ public class GWTDatapointCreator implements DatapointCreator<GWTDatapoint> {
 
         final GWTDatapoint datapoint = new GWTDatapoint(
             entry.getId(),
+            testDeclaration,
             astSequentializer.sequentialize(astSerializer.serialize(testDeclaration)),
             sequentializeThen(thenSection),
             thenSection.stream().map(Statement::toString).collect(Collectors.joining("\n")),
