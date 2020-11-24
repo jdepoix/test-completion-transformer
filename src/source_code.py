@@ -102,17 +102,17 @@ class TestDeclaration():
                 )
                 + [TestDeclaration.WHEN_DECLARATION_MARK] + tokenize(test_declaration['when'])
                 + TestDeclaration._tokenize_method_declarations(
-                    test_declaration['testCtx'],
+                    test_declaration['ctx'],
                     TestDeclaration.CONTEXT_DECLARATION_MARK
                 )
             )
-        except:
+        except Exception:
             return None
 
     @staticmethod
     def _tokenize_method_declarations(method_declarations, mark):
         return list(
             itertools.chain.from_iterable(
-                [mark + tokenize(method_declaration) for method_declaration in method_declarations]
+                [[mark] + tokenize(method_declaration) for method_declaration in method_declarations]
             )
         )
