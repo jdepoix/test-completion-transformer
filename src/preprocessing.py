@@ -59,7 +59,11 @@ def create_ast_value_vocab(dataset_path, output_path, only_values, special_words
 
 def save_vocab(path, vocab):
     with open(path, 'a+') as file:
-        file.writelines(f'{word}\n' for word in vocab)
+        for word in vocab:
+            try:
+                file.write(f'{word}\n')
+            except UnicodeEncodeError:
+                print(f'- Could not encode the following word to vocab: {word.encode("utf-8", "replace").decode()}')
 
 
 def remove_context_declarations_from_ast_sequence(
