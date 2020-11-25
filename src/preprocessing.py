@@ -113,8 +113,12 @@ def bpe_encode_dataset(
             if source_data is None or target_data is None:
                 continue
 
-            source_seq = bpe_processor.encode(source_data)
-            target_seq = bpe_processor.encode(target_data)
+            try:
+                source_seq = bpe_processor.encode(source_data)
+                target_seq = bpe_processor.encode(target_data)
+            except TypeError:
+                print(f'- skipped {datapoint["id"]} as it is not encodable!')
+                continue
 
             if target_format == TargetFormat.AST:
                 source_seq_length = len(source_seq)
