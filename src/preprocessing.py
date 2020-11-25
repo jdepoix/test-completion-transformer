@@ -364,6 +364,7 @@ def get_argpaser():
     parser.add_argument('--max_source_seq_length', type=int, default=None)
     parser.add_argument('--max_target_seq_length', type=int, default=None)
     parser.add_argument('--ast_model_path', type=str, default=None)
+    parser.add_argument('--skip_to_step', type=int, default=None)
     return parser
 
 
@@ -387,47 +388,58 @@ if __name__ == '__main__':
         tokenized_dataset_path = f'{args.input_dataset_path.split(".jsonl")[0]}_tokenized.jsonl'
         tokenize_target_data(args.input_dataset_path, tokenized_dataset_path)
         args.input_dataset_path = tokenized_dataset_path
-    print('Start creating raw AST value vocab...')
-    create_ast_value_vocab(args.input_dataset_path, raw_vocab_path, only_values=True, target_format=args.target_format)
-    print('Start training BPE...')
-    BpeProcessor.train(raw_vocab_path, model_name, model_path, args.bpe_vocab_size)
-    print('Start creating BPE encoded dataset...')
-    bpe_encode_dataset(
-        args.input_dataset_path,
-        f'{model_path}/{model_name}.model',
-        output_dataset_path,
-        args.max_source_seq_length,
-        args.max_target_seq_length,
-        target_format=args.target_format,
-        ast_model_path=args.ast_model_path,
-    )
-    print('Start creating BPE encoded AST value vocab...')
-    create_ast_value_vocab(
-        output_dataset_path,
-        bpe_vocab_path,
-        only_values=False,
-        special_words=[
-            Vocab.PAD_TOKEN,
-            Vocab.SOS_TOKEN,
-            Vocab.EOS_TOKEN,
-            BpeProcessor.NEW_LINE_TOKEN,
-            BpeProcessor.UNKOWN_TOKEN,
-        ],
-        target_format=args.target_format,
-    )
-    print('Start creating/encoding data split')
-    if args.data_split_dir_path is None:
-        create_encoded_dataset_split(
-            data_split_dir_path,
+
+    if args.skip_to_step is None or args.skip_to_step <= 1:
+        print('Start creating raw AST value vocab...')
+        create_ast_value_vocab(
+            args.input_dataset_path,
+            raw_vocab_path,
+            only_values=True,
+            target_format=args.target_format
+        )
+    if args.skip_to_step is None or args.skip_to_step <= 2:
+        print('Start training BPE...')
+        BpeProcessor.train(raw_vocab_path, model_name, model_path, args.bpe_vocab_size)
+    if args.skip_to_step is None or args.skip_to_step <= 3:
+        print('Start creating BPE encoded dataset...')
+        bpe_encode_dataset(
+            args.input_dataset_path,
+            f'{model_path}/{model_name}.model',
+            output_dataset_path,
+            args.max_source_seq_length,
+            args.max_target_seq_length,
+            target_format=args.target_format,
+            ast_model_path=args.ast_model_path,
+        )
+    if args.skip_to_step is None or args.skip_to_step <= 4:
+        print('Start creating BPE encoded AST value vocab...')
+        create_ast_value_vocab(
             output_dataset_path,
             bpe_vocab_path,
-            (.8, .1, .1),
+            only_values=False,
+            special_words=[
+                Vocab.PAD_TOKEN,
+                Vocab.SOS_TOKEN,
+                Vocab.EOS_TOKEN,
+                BpeProcessor.NEW_LINE_TOKEN,
+                BpeProcessor.UNKOWN_TOKEN,
+            ],
             target_format=args.target_format,
         )
-    else:
-        encode_predefined_dataset_split(
-            data_split_dir_path,
-            output_dataset_path,
-            bpe_vocab_path,
-            target_format=args.target_format,
-        )
+    if args.skip_to_step is None or args.skip_to_step <= 5:
+        print('Start creating/encoding data split')
+        if args.data_split_dir_path is None:
+            create_encoded_dataset_split(
+                data_split_dir_path,
+                output_dataset_path,
+                bpe_vocab_path,
+                (.8, .1, .1),
+                target_format=args.target_format,
+            )
+        else:
+            encode_predefined_dataset_split(
+                data_split_dir_path,
+                output_dataset_path,
+                bpe_vocab_path,
+                target_format=args.target_format,
+            )
