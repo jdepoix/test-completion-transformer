@@ -307,7 +307,7 @@ def encode_predefined_dataset_split(
                     if code_tokens:
                         test_code_tokens_file.write(code_tokens)
                 else:
-                    raise ValueError(f'id {json_data["id"]} is not part of any of the splits')
+                    print(f'- id {json_data["id"]} is not part of any of the splits')
 
 
 def tokenize_target_data(input_dataset_path, output_path):
