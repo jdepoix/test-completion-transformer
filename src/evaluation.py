@@ -22,7 +22,7 @@ import sampling
 from ast_sequentialization_api_client import AstSequentializationApiClient
 from model import GwtSectionPredictionTransformer
 from predict import PredictionPipeline, ThenSectionPredictor
-from source_code import AstSequenceProcessor
+from source_code import AstSequenceProcessor, TokenizedCodeProcessor
 
 
 class Evaluator():
@@ -201,19 +201,25 @@ if __name__ == '__main__':
         sampling.Type.ONLY_KNOWN_IDENTIFIERS_NUCLEUS,
     ))
     parser.add_argument('--device', type=str, default='cuda', choices=('cpu', 'cuda',))
+    parser.add_argument('--format', type=str, default='AST', choices=('AST', 'CODE',))
     parser.add_argument('--log_interval', type=int, default=1000)
     args = parser.parse_args()
 
-    vocab = data.Vocab(args.vocab_path)
+    sequentialization_client = AstSequentializationApiClient(
+        args.sequentialization_api_host,
+        args.sequentialization_api_port,
+    )
+    if args.format == 'AST':
+        source_code_processor = AstSequenceProcessor(sequentialization_client)
+    else:
+        source_code_processor = TokenizedCodeProcessor(sequentialization_client)
     Evaluator(
         GwtSectionPredictionTransformer,
         args.sampler,
         args.evaluation_dataset_path,
-        vocab,
+        data.Vocab(args.vocab_path),
         bpe.BpeProcessor(args.bpe_model_path),
-        AstSequenceProcessor(
-            AstSequentializationApiClient(args.sequentialization_api_host, args.sequentialization_api_port)
-        ),
+        source_code_processor,
         args.max_prediction_length,
         args.num_workers,
         args.device,
