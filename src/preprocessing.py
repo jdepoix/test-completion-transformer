@@ -149,6 +149,7 @@ def bpe_encode_dataset(
                     'srcCodeTok': source_seq if target_format == TargetFormat.CODE else datapoint['srcCodeTok'],
                     'trgTok': target_seq if target_format == TargetFormat.AST else datapoint['trgTok'],
                     'trgCodeTok': target_seq if target_format == TargetFormat.CODE else datapoint['trgCodeTok'],
+                    'trgCode': datapoint['trgCodeTok'],
                     'testCtxCount': datapoint['testCtxCount'] if not remove_context_declarations else 0,
                     'ctxCount': datapoint['ctxCount'] if not remove_context_declarations else 0,
                 }))
@@ -218,8 +219,8 @@ def create_encoded_dataset_split(
                 train_data_file.write(data)
                 train_data_ids_file.write(json_data['id'] + '\n')
             else:
-                code_tokens = dump_jsonl([src_data, json_data['trgCodeTok']]) \
-                    if json_data['trgCodeTok'] is not None else None
+                code_tokens = dump_jsonl([src_data, json_data['trgCode']]) \
+                    if json_data['trgCode'] is not None else None
                 if line_counter in validation_lines:
                     validate_data_file.write(data)
                     validate_data_ids_file.write(json_data['id'] + '\n')
@@ -297,8 +298,8 @@ def encode_predefined_dataset_split(
             if json_data['id'] in train_ids:
                 train_data_file.write(data)
             else:
-                code_tokens = dump_jsonl([src_data, json_data['trgCodeTok']]) \
-                    if json_data['trgCodeTok'] is not None else None
+                code_tokens = dump_jsonl([src_data, json_data['trgCode']]) \
+                    if json_data['trgCode'] is not None else None
                 if json_data['id'] in validate_ids:
                     validate_data_file.write(data)
                     if code_tokens:
