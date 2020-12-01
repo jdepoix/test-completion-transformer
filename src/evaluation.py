@@ -37,6 +37,7 @@ class Evaluator():
         max_prediction_length,
         num_workers,
         device,
+        prediction_log_dir,
         log_interval=1000,
     ):
         self._model_class = model_class
@@ -52,15 +53,15 @@ class Evaluator():
         ]
         if device == 'cuda':
             torch.multiprocessing.set_start_method('spawn')
+        self._prediction_log_dir = prediction_log_dir
         self._log_interval = log_interval
 
     def evaluate(self, tensorboard_log_dir, max_number_of_checkpoints):
-        with tensorboard.SummaryWriter(tensorboard_log_dir) as writer:
-            for checkpoint in self._find_relevant_checkpoints(tensorboard_log_dir, max_number_of_checkpoints):
-                print(f'{"=" * 30} {checkpoint} {"=" * 30}')
-                results = self._evaluate_checkpoint(checkpoint)
-                print(results)
-                self._report_results(writer, checkpoint, results)
+        for checkpoint in self._find_relevant_checkpoints(tensorboard_log_dir, max_number_of_checkpoints):
+            print(f'{"=" * 30} {checkpoint} {"=" * 30}')
+            results = self._evaluate_checkpoint(checkpoint)
+            print(results)
+            self._report_results(tensorboard_log_dir, checkpoint, results)
 
     def _find_relevant_checkpoints(self, log_dir, max_number_of_checkpoints):
         scores = []
@@ -131,23 +132,28 @@ class Evaluator():
         predictions = []
         targets = []
 
-        for index, future in enumerate(futures):
-            try:
-                result = future.result()
-                predictions.append(result['prediction'])
-                targets.append([result['target']])
-            except PredictionPipeline.ContainsUnknownToken:
-                contains_unknown_token_count += 1
-            except ThenSectionPredictor.PredictionExceededMaxLength:
-                max_length_exceeded_count += 1
-            except AstSequentializationApiClient.ApiError:
-                unparsable_count += 1
-            except Exception:
-                print(f'evaluation for datapoint #{index} failed:')
-                traceback.print_exc()
-                error_count += 1
-            finally:
-                total_count += 1
+        with \
+                open(f'{self._prediction_log_dir}/predictions.log', 'w+') as predictions_log_file, \
+                open(f'{self._prediction_log_dir}/targets.log', 'w+') as targets_log_file:
+            for index, future in enumerate(futures):
+                try:
+                    result = future.result()
+                    predictions.append(result['prediction'])
+                    targets.append([result['target']])
+                    predictions_log_file.write(str(result['prediction']) + '\n')
+                    targets_log_file.write(str(result['target']) + '\n')
+                except PredictionPipeline.ContainsUnknownToken:
+                    contains_unknown_token_count += 1
+                except ThenSectionPredictor.PredictionExceededMaxLength:
+                    max_length_exceeded_count += 1
+                except AstSequentializationApiClient.ApiError:
+                    unparsable_count += 1
+                except Exception:
+                    print(f'evaluation for datapoint #{index} failed:')
+                    traceback.print_exc()
+                    error_count += 1
+                finally:
+                    total_count += 1
 
         rouge_results = Rouge(rouge_n=(1, 2),).evaluate_tokenized(
             [[prediction] for prediction in predictions],
@@ -174,10 +180,11 @@ class Evaluator():
             'rouge_2_fscore': rouge_results['rouge-2']['f'] * 100,
         }
 
-    def _report_results(self, writer, checkpoint_path, results):
+    def _report_results(self, tensorboard_log_dir, checkpoint_path, results):
         step = self._get_step_from_checkpoint(checkpoint_path)
-        for metric, value in results.items():
-            writer.add_scalar(metric, value, global_step=step)
+        with tensorboard.SummaryWriter(tensorboard_log_dir) as writer:
+            for metric, value in results.items():
+                writer.add_scalar(metric, value, global_step=step)
 
     def _get_step_from_checkpoint(self, checkpoint_path):
         return torch.load(checkpoint_path, map_location=torch.device('cpu'))['global_step']
@@ -190,6 +197,7 @@ if __name__ == '__main__':
     parser.add_argument('--vocab_path', type=str, required=True)
     parser.add_argument('--bpe_model_path', type=str, required=True)
     parser.add_argument('--num_workers', type=int, required=True)
+    parser.add_argument('--prediction_log_dir', type=str, required=True)
     parser.add_argument('--sequentialization_api_port', type=int, default=5555)
     parser.add_argument('--sequentialization_api_host', type=str, default='localhost')
     parser.add_argument('--max_prediction_length', type=int, default=512)
@@ -204,6 +212,8 @@ if __name__ == '__main__':
     parser.add_argument('--format', type=str, default='AST', choices=('AST', 'CODE',))
     parser.add_argument('--log_interval', type=int, default=1000)
     args = parser.parse_args()
+
+    os.makedirs(args.prediction_log_dir, exist_ok=True)
 
     sequentialization_client = AstSequentializationApiClient(
         args.sequentialization_api_host,
@@ -223,5 +233,6 @@ if __name__ == '__main__':
         args.max_prediction_length,
         args.num_workers,
         args.device,
+        args.prediction_log_dir,
         args.log_interval,
     ).evaluate(args.tensorboard_log_dir, args.max_number_of_checkpoints)
