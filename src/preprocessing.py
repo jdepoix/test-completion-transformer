@@ -2,6 +2,7 @@ import os
 import json
 import math
 from argparse import ArgumentParser
+import random
 
 from torch.utils.data import random_split
 
@@ -322,6 +323,11 @@ def tokenize_target_data(input_dataset_path, output_path):
                 'testCtxCount': datapoint['testCtxCount'],
                 'ctxCount': datapoint['ctxCount'],
             }))
+
+
+def sample_file(input_path, output_path, sample_size):
+    with open(input_path) as input_file, open(output_path, 'w+') as output_file:
+        output_file.writelines(random.sample(input_file.readlines(), sample_size))
 
 
 def get_file_length(path):
