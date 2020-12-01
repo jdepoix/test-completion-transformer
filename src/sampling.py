@@ -79,12 +79,17 @@ class Loader():
     def __init__(self, vocab):
         self._vocab = vocab
 
-    def load_sampler(self, sampler_id):
-        if sampler_id == Type.ONLY_KNOWN_IDENTIFIERS_NUCLEUS:
-            return lambda seq: OnlyKnownIdentifiersSampler(self._vocab, seq, NucleusSampler())
-        if sampler_id == Type.ONLY_KNOWN_IDENTIFIERS_GREEDY:
-            return lambda seq: OnlyKnownIdentifiersSampler(self._vocab, seq, GreedySampler())
-        if sampler_id == Type.NUCLEUS:
-            return lambda _: NucleusSampler()
-        if sampler_id == Type.GREEDY:
+    def load_sampler(self, sampler_type, **kwargs):
+        nucleus_kwargs = {'p': kwargs['p']} if 'p' in kwargs else {}
+        only_known_kwargs = {'fallback_p': kwargs['fallback_p']} if 'fallback_p' in kwargs else {}
+
+        if sampler_type == Type.ONLY_KNOWN_IDENTIFIERS_NUCLEUS:
+            return lambda seq: OnlyKnownIdentifiersSampler(
+                self._vocab, seq, NucleusSampler(**nucleus_kwargs), **only_known_kwargs
+            )
+        if sampler_type == Type.ONLY_KNOWN_IDENTIFIERS_GREEDY:
+            return lambda seq: OnlyKnownIdentifiersSampler(self._vocab, seq, GreedySampler(), **only_known_kwargs)
+        if sampler_type == Type.NUCLEUS:
+            return lambda _: NucleusSampler(**nucleus_kwargs)
+        if sampler_type == Type.GREEDY:
             return lambda _: GreedySampler()
