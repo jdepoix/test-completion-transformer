@@ -37,6 +37,7 @@ class Evaluator():
         max_prediction_length,
         num_workers,
         device,
+        write_results_to_tensorboard,
         prediction_log_dir,
         log_interval=1000,
     ):
@@ -53,6 +54,7 @@ class Evaluator():
         ]
         if device == 'cuda':
             torch.multiprocessing.set_start_method('spawn')
+        self._write_results_to_tensorboard = write_results_to_tensorboard
         self._prediction_log_dir = prediction_log_dir
         self._log_interval = log_interval
 
@@ -61,7 +63,8 @@ class Evaluator():
             print(f'{"=" * 30} {checkpoint} {"=" * 30}')
             results = self._evaluate_checkpoint(checkpoint)
             print(results)
-            self._report_results(tensorboard_log_dir, checkpoint, results)
+            if self._write_results_to_tensorboard:
+                self._report_results(tensorboard_log_dir, checkpoint, results)
 
     def _find_relevant_checkpoints(self, log_dir, max_number_of_checkpoints):
         scores = []
@@ -198,6 +201,7 @@ if __name__ == '__main__':
     parser.add_argument('--bpe_model_path', type=str, required=True)
     parser.add_argument('--num_workers', type=int, required=True)
     parser.add_argument('--prediction_log_dir', type=str, required=True)
+    parser.add_argument('--write_results_to_tensorboard', type=bool, default=False)
     parser.add_argument('--sequentialization_api_port', type=int, default=5555)
     parser.add_argument('--sequentialization_api_host', type=str, default='localhost')
     parser.add_argument('--max_prediction_length', type=int, default=512)
@@ -233,6 +237,7 @@ if __name__ == '__main__':
         args.max_prediction_length,
         args.num_workers,
         args.device,
+        args.write_results_to_tensorboard,
         args.prediction_log_dir,
         args.log_interval,
     ).evaluate(args.tensorboard_log_dir, args.max_number_of_checkpoints)
