@@ -115,7 +115,7 @@ class Evaluator():
             initargs=(checkpoint_path,)
         ) as executor:
             futures_per_sampler = defaultdict(list)
-            for index, json_line, sampler in self._permute_dataset_file_with_samplers():
+            for index, json_line, sampler in self._permute_dataset_with_samplers():
                 futures_per_sampler[sampler].append(
                     executor.submit(self._evaluate_datapoint, json_line, sampler, index)
                 )
