@@ -28,7 +28,7 @@ def objective(trial):
     relevant_metric = 'val_loss'
 
     args = get_parser().parse_args()
-    args.experiment_name = 'hyperparameter_tuning'
+    args.experiment_name = trial.study.study_name
 
     args.learning_rate = trial.suggest_categorical('learning_rate', [1e-2, 5e-3, 1e-3])
     args.lr_warmup_steps = trial.suggest_categorical('lr_warmup_steps', [1000, 2000, 4000])
@@ -63,7 +63,7 @@ def objective(trial):
 
 def run_study():
     study = optuna.create_study(
-        study_name='hyperparameter_tuning_v2',
+        study_name='hyperparameter_tuning_tokenized_code',
         storage='sqlite:///../optuna_cache.db',
         load_if_exists=True,
         direction='minimize',
