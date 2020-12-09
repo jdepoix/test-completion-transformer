@@ -85,7 +85,7 @@ def load_checkpoint_if_available(checkpoint_dir):
 
     last_checkpoint = None
     for checkpoint in os.scandir(checkpoint_dir):
-        if not checkpoint.name.endswith('.ckpt'):
+        if not checkpoint.name.endswith('.ckpt') or 'tmp' in checkpoint.name:
             continue
 
         metrics = checkpoint.name.split('-')
@@ -99,7 +99,10 @@ def load_checkpoint_if_available(checkpoint_dir):
                 'epoch': epoch
             }
 
-    return last_checkpoint['path'] if last_checkpoint else None
+    checkpoint = last_checkpoint['path'] if last_checkpoint else None
+    if checkpoint:
+        print(f'RESUMING FROM CHECKPOINT {checkpoint}...')
+    return checkpoint
 
 
 if __name__ == '__main__':

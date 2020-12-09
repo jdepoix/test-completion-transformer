@@ -33,6 +33,7 @@ class InverseSquareRootLR(_LRScheduler):
         else:
             return [decay_factor * self.last_epoch ** -0.5 for decay_factor in self._decay_factors]
 
+
 class PositionalEncoding(pl.LightningModule):
     def __init__(self, features_size, max_len, dropout=0.1):
         super(PositionalEncoding, self).__init__()
