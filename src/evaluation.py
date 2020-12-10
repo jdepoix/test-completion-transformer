@@ -182,6 +182,7 @@ class Evaluator():
             'max_length_exceeded_rate': max_length_exceeded_count / total_count * 100,
             'contains_unknown_token_rate': contains_unknown_token_count / total_count * 100,
             'unparsable_rate': unparsable_count / total_count * 100,
+            'error_count': error_count,
             'bleu_score': corpus_bleu(targets, predictions) * 100,
             'bleu_score_n1': corpus_bleu(targets, predictions, weights=(1, 0, 0, 0,)) * 100,
             'bleu_score_n2': corpus_bleu(targets, predictions, weights=(0, 1, 0, 0,)) * 100,
