@@ -1,6 +1,7 @@
 import os
 import json
 import traceback
+import datetime
 from collections import defaultdict
 from concurrent.futures.process import ProcessPoolExecutor
 import multiprocessing
@@ -61,9 +62,9 @@ class Evaluator():
 
     def evaluate(self, tensorboard_log_dir, max_number_of_checkpoints):
         for checkpoint in self._find_relevant_checkpoints(tensorboard_log_dir, max_number_of_checkpoints):
-            print(f'{"=" * 30} {checkpoint} {"=" * 30}')
+            print(f'[{datetime.datetime.now()}] {"=" * 30} {checkpoint} {"=" * 30}')
             results = self._evaluate_checkpoint(checkpoint)
-            print(results)
+            print(f'[{datetime.datetime.now()}] {results}')
             if self._write_results_to_tensorboard:
                 self._report_results(tensorboard_log_dir, checkpoint, results)
 
@@ -134,7 +135,7 @@ class Evaluator():
         )
         tokenized_prediction = [token.value for token in javalang.tokenizer.tokenize(prediction)]
         if index % self._log_interval == 0:
-            print(f'FINISHED evaluating {index}')
+            print(f'[{datetime.datetime.now()}] FINISHED evaluating {index}')
         return {
             'prediction': tokenized_prediction,
             'target': target,
@@ -167,13 +168,13 @@ class Evaluator():
                 except AstSequentializationApiClient.ApiError:
                     unparsable_count += 1
                 except Exception:
-                    print(f'evaluation for datapoint #{index} failed:')
+                    print(f'[{datetime.datetime.now()}] evaluation for datapoint #{index} failed:')
                     traceback.print_exc()
                     error_count += 1
                 finally:
                     total_count += 1
 
-        print(f'finished processing results for {sampler}: ' + str({
+        print(f'[{datetime.datetime.now()}] finished processing results for {sampler}: ' + str({
             'total_count': total_count,
             'max_length_exceeded_count': max_length_exceeded_count,
             'contains_unknown_token_count': contains_unknown_token_count,
