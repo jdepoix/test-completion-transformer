@@ -102,7 +102,7 @@ class GwtSectionPredictionTransformer(pl.LightningModule):
         feedforward_dimensions,
         positional_encoding_dropout,
         transformer_dropout,
-        lr_warmup_steps,
+        lr_warmup_steps=None,
     ):
         super().__init__()
         self.max_sequence_length = max_sequence_length
@@ -178,6 +178,9 @@ class GwtSectionPredictionTransformer(pl.LightningModule):
 
     def configure_optimizers(self):
         optimizer = AdamW(self.parameters(), lr=self.learning_rate)
+        if self.lr_warmup_steps is None:
+            return optimizer
+
         scheduler = InverseSquareRootLR(optimizer, self.lr_warmup_steps)
         return (
             [optimizer],
@@ -186,7 +189,6 @@ class GwtSectionPredictionTransformer(pl.LightningModule):
                     'scheduler': scheduler,
                     'interval': 'step',
                     'frequency': 1,
-                    # TODO try this out
                     'reduce_on_plateau': False,
                     'monitor': 'val_loss',
                 }

@@ -173,6 +173,16 @@ class Evaluator():
                 finally:
                     total_count += 1
 
+        print(f'finished processing results for {sampler}: ' + str({
+            'total_count': total_count,
+            'max_length_exceeded_count': max_length_exceeded_count,
+            'contains_unknown_token_count': contains_unknown_token_count,
+            'unparsable_count': unparsable_count,
+            'error_count': error_count,
+            'prediction_length': len(predictions),
+            'target_length': len(targets),
+        }))
+
         rouge_results = Rouge(rouge_n=(1, 2),).evaluate_tokenized(
             [[prediction] for prediction in predictions],
             [[target] for target in targets]
@@ -182,7 +192,7 @@ class Evaluator():
             'max_length_exceeded_rate': max_length_exceeded_count / total_count * 100,
             'contains_unknown_token_rate': contains_unknown_token_count / total_count * 100,
             'unparsable_rate': unparsable_count / total_count * 100,
-            'error_count': error_count,
+            'error_rate': error_count / total_count * 100,
             'bleu_score': corpus_bleu(targets, predictions) * 100,
             'bleu_score_n1': corpus_bleu(targets, predictions, weights=(1, 0, 0, 0,)) * 100,
             'bleu_score_n2': corpus_bleu(targets, predictions, weights=(0, 1, 0, 0,)) * 100,

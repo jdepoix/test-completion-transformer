@@ -28,8 +28,7 @@ class PredictionApi():
         vocab = Vocab(f'{data_dir}/data/bpe_ast_vocab.txt')
         sequentialization_client = AstSequentializationApiClient('localhost', 5555)
         device = 'cuda' if torch.cuda.is_available() else 'cpu'
-        # TODO REMOVE!!!
-        from DEPRECATED_model import GwtSectionPredictionTransformer
+
         self._predictors = {
             model_file.split('.ckpt')[0]: PredictionPipeline(
                 ThenSectionPredictor(
