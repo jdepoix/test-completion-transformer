@@ -63,14 +63,16 @@ def train(args, custom_callbacks=None):
 
     checkpoint_dir = os.path.join(logger.log_dir, 'checkpoints')
 
+    loss_key = 'val_loss' if not args.optimize_on_smoothed_loss else 'label_smoothed_val_loss'
+
     trainer = pl.Trainer.from_argparse_args(
         args,
         resume_from_checkpoint=load_checkpoint_if_available(checkpoint_dir),
         logger=logger,
         checkpoint_callback=callbacks.ModelCheckpoint(
-            filepath=f'{checkpoint_dir}/{{epoch}}-{{val_loss}}',
+            filepath=f'{checkpoint_dir}/{{epoch}}-{{{loss_key}}}',
             save_top_k=5,
-            monitor='val_loss',
+            monitor=loss_key,
             mode='min',
         ),
         **({'callbacks': custom_callbacks} if custom_callbacks else {}),
