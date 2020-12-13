@@ -109,6 +109,7 @@ class GwtSectionPredictionTransformer(pl.LightningModule):
         super().__init__()
         self.max_sequence_length = max_sequence_length
         self.criterion = nn.CrossEntropyLoss(ignore_index=padding_token_idx)
+        self.optimize_on_smoothed_loss = optimize_on_smoothed_loss
         self.label_smoothed_criterion = LabelSmoothingLoss(.1, vocab_size, padding_token_idx)
         self.learning_rate = learning_rate
 
