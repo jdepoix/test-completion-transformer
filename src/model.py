@@ -87,6 +87,7 @@ class GwtSectionPredictionTransformer(pl.LightningModule):
         parser.add_argument('--positional_encoding_dropout', type=float, default=0.1)
         parser.add_argument('--transformer_dropout', type=float, default=0.1)
         parser.add_argument('--lr_warmup_steps', type=int, default=4000)
+        parser.add_argument('--optimize_on_smoothed_loss', type=bool, default=False)
         return parser
 
     def __init__(
@@ -103,6 +104,7 @@ class GwtSectionPredictionTransformer(pl.LightningModule):
         positional_encoding_dropout,
         transformer_dropout,
         lr_warmup_steps=None,
+        optimize_on_smoothed_loss=False,
     ):
         super().__init__()
         self.max_sequence_length = max_sequence_length
@@ -162,19 +164,19 @@ class GwtSectionPredictionTransformer(pl.LightningModule):
         self.log('learning_rate', self.optimizers().param_groups[0]['lr'])
         self.log('train_loss', loss)
         self.log('label_smoothed_train_loss', label_smoothed_loss)
-        return loss
+        return loss if not self.optimize_on_smoothed_loss else label_smoothed_loss
 
     def validation_step(self, batch, batch_idx):
         loss, label_smoothed_loss = self._get_forward_loss(batch)
         self.log('val_loss', loss)
         self.log('label_smoothed_val_loss', label_smoothed_loss)
-        return loss
+        return loss if not self.optimize_on_smoothed_loss else label_smoothed_loss
 
     def test_step(self, batch, batch_idx):
         loss, label_smoothed_loss = self._get_forward_loss(batch)
         self.log('test_loss', loss)
         self.log('label_smoothed_test_loss', label_smoothed_loss)
-        return loss
+        return loss if not self.optimize_on_smoothed_loss else label_smoothed_loss
 
     def configure_optimizers(self):
         optimizer = AdamW(self.parameters(), lr=self.learning_rate)

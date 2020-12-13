@@ -51,6 +51,7 @@ def train(args, custom_callbacks=None):
         args.positional_encoding_dropout,
         args.transformer_dropout,
         args.lr_warmup_steps,
+        args.optimize_on_smoothed_loss,
     )
 
     logger = loggers.TensorBoardLogger(
