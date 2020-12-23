@@ -4,9 +4,9 @@ from argparse import ArgumentParser
 
 import torch
 import torch.nn as nn
+import torch.nn.functional as F
 from torch.optim.adamw import AdamW
 from torch.optim.lr_scheduler import _LRScheduler
-from torch.nn import functional
 
 import pytorch_lightning as pl
 
@@ -52,25 +52,24 @@ class PositionalEncoding(pl.LightningModule):
         return self.dropout(x)
 
 
-class LabelSmoothingLoss(pl.LightningModule):
-    def __init__(self, label_smoothing, tgt_vocab_size, ignore_index=-100):
-        assert 0.0 < label_smoothing <= 1.0
-        self.ignore_index = ignore_index
-        super(LabelSmoothingLoss, self).__init__()
+class LabelSmoothedCrossEntropy(nn.Module):
+    def __init__(self, epsilon: float = 0.1, reduction='mean'):
+        super().__init__()
+        self.epsilon = epsilon
+        self.reduction = reduction
 
-        smoothing_value = label_smoothing / (tgt_vocab_size - 2)
-        one_hot = torch.full((tgt_vocab_size,), smoothing_value, device=self.device)
-        one_hot[self.ignore_index] = 0
-        self.register_buffer('one_hot', one_hot.unsqueeze(0))
+    def forward(self, preds, target):
+        n = preds.size()[-1]
+        log_preds = F.log_softmax(preds, dim=-1)
+        loss = self._reduce_loss(-log_preds.sum(dim=-1), self.reduction)
+        nll = F.nll_loss(log_preds, target, reduction=self.reduction)
+        return self._linear_combination(loss / n, nll, self.epsilon)
 
-        self.confidence = 1.0 - label_smoothing
+    def _linear_combination(self, x, y, epsilon):
+        return epsilon * x + (1 - epsilon) * y
 
-    def forward(self, output, target):
-        model_prob = self.one_hot.repeat(target.size(0), 1)
-        model_prob.scatter_(1, target.unsqueeze(1), self.confidence)
-        model_prob.masked_fill_((target == self.ignore_index).unsqueeze(1), 0)
-
-        return functional.kl_div(output, model_prob, reduction='sum')
+    def _reduce_loss(self, loss, reduction='mean'):
+        return loss.mean() if reduction == 'mean' else loss.sum() if reduction == 'sum' else loss
 
 
 class GwtSectionPredictionTransformer(pl.LightningModule):
@@ -110,7 +109,7 @@ class GwtSectionPredictionTransformer(pl.LightningModule):
         self.max_sequence_length = max_sequence_length
         self.criterion = nn.CrossEntropyLoss(ignore_index=padding_token_idx)
         self.optimize_on_smoothed_loss = optimize_on_smoothed_loss
-        self.label_smoothed_criterion = LabelSmoothingLoss(.1, vocab_size, padding_token_idx)
+        self.label_smoothed_cross_entropy = LabelSmoothedCrossEntropy()
         self.learning_rate = learning_rate
 
         self.padding_token_idx = padding_token_idx
@@ -158,7 +157,7 @@ class GwtSectionPredictionTransformer(pl.LightningModule):
         output = self(source, target_in)
         loss_src = output.reshape(-1, output.shape[2])
         loss_trg = target_out.reshape(-1)
-        return self.criterion(loss_src, loss_trg), self.label_smoothed_criterion(loss_src, loss_trg)
+        return self.criterion(loss_src, loss_trg), self.label_smoothed_cross_entropy(loss_src, loss_trg)
 
     def training_step(self, batch, batch_idx):
         loss, label_smoothed_loss = self._get_forward_loss(batch)
@@ -193,7 +192,7 @@ class GwtSectionPredictionTransformer(pl.LightningModule):
                     'interval': 'step',
                     'frequency': 1,
                     'reduce_on_plateau': False,
-                    'monitor': 'val_loss',
+                    'monitor': 'label_smoothed_val_loss' if self.optimize_on_smoothed_loss else 'val_loss',
                 }
             ]
         )
