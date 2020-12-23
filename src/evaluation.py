@@ -23,7 +23,7 @@ import data
 import sampling
 from ast_sequentialization_api_client import AstSequentializationApiClient
 from model import GwtSectionPredictionTransformer
-from predict import PredictionPipeline, ThenSectionPredictor
+from predict import PredictionPipeline, ThenSectionPredictor, FailedPrediction
 from source_code import AstSequenceProcessor, TokenizedCodeProcessor
 
 
@@ -42,6 +42,7 @@ class Evaluator():
         write_results_to_tensorboard,
         prediction_log_dir,
         log_interval=1000,
+        dataset_ids_path=None,
     ):
         self._model_class = model_class
         self._sampler_settings = sampler_settings
@@ -59,6 +60,10 @@ class Evaluator():
         self._write_results_to_tensorboard = write_results_to_tensorboard
         self._prediction_log_dir = prediction_log_dir
         self._log_interval = log_interval
+        self._dataset_ids = None
+        if dataset_ids_path is not None:
+            with open(dataset_ids_path) as dataset_ids_file:
+                self._dataset_ids = [line[:-1] for line in dataset_ids_file.readlines()]
 
     def evaluate(self, tensorboard_log_dir, max_number_of_checkpoints):
         for checkpoint in self._find_relevant_checkpoints(tensorboard_log_dir, max_number_of_checkpoints):
@@ -88,7 +93,8 @@ class Evaluator():
         Evaluator.prediction_pipeline = PredictionPipeline(
             ThenSectionPredictor(
                 self._model_class.load_from_checkpoint(
-                    checkpoint_path
+                    checkpoint_path,
+                    strict=False,
                 ).to(
                     device
                 ).eval(),
@@ -104,9 +110,9 @@ class Evaluator():
     def _permute_dataset_with_samplers(self):
         with open(self._dataset_path) as dataset_file:
             index = 0
-            for line in dataset_file:
+            for datapoint_index, line in enumerate(dataset_file):
                 for sampler in self._sampler_settings:
-                    yield index, line, sampler
+                    yield index, datapoint_index, line, sampler
                     index += 1
 
     def _evaluate_checkpoint(self, checkpoint_path):
@@ -116,9 +122,9 @@ class Evaluator():
             initargs=(checkpoint_path,)
         ) as executor:
             futures_per_sampler = defaultdict(list)
-            for index, json_line, sampler in self._permute_dataset_with_samplers():
+            for index, datapoint_index, json_line, sampler in self._permute_dataset_with_samplers():
                 futures_per_sampler[sampler].append(
-                    executor.submit(self._evaluate_datapoint, json_line, sampler, index)
+                    executor.submit(self._evaluate_datapoint, json_line, sampler, index, datapoint_index)
                 )
 
             return {
@@ -126,7 +132,7 @@ class Evaluator():
                 for sampler, futures in futures_per_sampler.items()
             }
 
-    def _evaluate_datapoint(self, json_line, sampler, index):
+    def _evaluate_datapoint(self, json_line, sampler, index, datapoint_index):
         source, target = json.loads(json_line)
         sampler_setting = self._sampler_settings[sampler]
         prediction = Evaluator.prediction_pipeline.execute_on_encoded(
@@ -139,6 +145,7 @@ class Evaluator():
         return {
             'prediction': tokenized_prediction,
             'target': target,
+            'datapoint_index': datapoint_index,
         }
 
     def _process_futures(self, futures, sampler):
@@ -153,20 +160,34 @@ class Evaluator():
 
         with \
                 open(f'{self._prediction_log_dir}/{sampler}_predictions.log', 'w+') as predictions_log_file, \
+                open(
+                    f'{self._prediction_log_dir}/{sampler}_predictions_FAILED.log', 'w+'
+                ) as failed_predictions_log_file, \
                 open(f'{self._prediction_log_dir}/{sampler}_targets.log', 'w+') as targets_log_file:
             for index, future in enumerate(futures):
                 try:
                     result = future.result()
                     predictions.append(result['prediction'])
                     targets.append([result['target']])
-                    predictions_log_file.write(str(result['prediction']) + '\n')
-                    targets_log_file.write(str(result['target']) + '\n')
-                except PredictionPipeline.ContainsUnknownToken:
-                    contains_unknown_token_count += 1
-                except ThenSectionPredictor.PredictionExceededMaxLength:
-                    max_length_exceeded_count += 1
-                except AstSequentializationApiClient.ApiError:
-                    unparsable_count += 1
+                    datapoint_id = result['datapoint_index'] \
+                        if self._dataset_ids is None else self._dataset_ids[result['datapoint_index']]
+                    predictions_log_file.write(f'{datapoint_id}\t{result["prediction"]}\n')
+                    targets_log_file.write(f'{datapoint_id}\t{result["target"]}\n')
+                except FailedPrediction as exception:
+                    if isinstance(exception, PredictionPipeline.ContainsUnknownToken):
+                        contains_unknown_token_count += 1
+                    elif isinstance(exception, ThenSectionPredictor.PredictionExceededMaxLength):
+                        max_length_exceeded_count += 1
+                    elif isinstance(exception, PredictionPipeline.PredictionUnparsable):
+                        unparsable_count += 1
+
+                    try:
+                        raw_prediction = self._vocab.decode(exception.raw_prediction)
+                        if self._bpe_processor.UNKOWN_TOKEN not in raw_prediction:
+                            raw_prediction = self._bpe_processor.decode(raw_prediction)
+                    except Exception:
+                        raw_prediction = exception.raw_prediction
+                    failed_predictions_log_file.write(f'{raw_prediction}\n')
                 except Exception:
                     print(f'[{datetime.datetime.now()}] evaluation for datapoint #{index} failed:')
                     traceback.print_exc()
@@ -225,6 +246,7 @@ def get_parser():
     parser = ArgumentParser()
     parser.add_argument('--tensorboard_log_dir', type=str, required=True)
     parser.add_argument('--evaluation_dataset_path', type=str, required=True)
+    parser.add_argument('--evaluation_dataset_ids_path', type=str, default=None)
     parser.add_argument('--vocab_path', type=str, required=True)
     parser.add_argument('--bpe_model_path', type=str, required=True)
     parser.add_argument('--num_workers', type=int, required=True)
@@ -290,4 +312,5 @@ if __name__ == '__main__':
         args.write_results_to_tensorboard,
         args.prediction_log_dir,
         args.log_interval,
+        args.evaluation_dataset_ids_path,
     ).evaluate(args.tensorboard_log_dir, args.max_number_of_checkpoints)

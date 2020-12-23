@@ -326,9 +326,26 @@ def tokenize_target_data(input_dataset_path, output_path):
             }))
 
 
-def sample_file(input_path, output_path, sample_size):
-    with open(input_path) as input_file, open(output_path, 'w+') as output_file:
-        output_file.writelines(random.sample(input_file.readlines(), sample_size))
+def sample_file(
+    input_data_path, input_ids_path, output_data_path, output_ids_path, sample_size, reference_ids_path=None
+):
+    with \
+            open(input_data_path) as input_data_file, \
+            open(output_data_path, 'w+') as output_data_file, \
+            open(input_ids_path) as input_ids_file, \
+            open(output_ids_path, 'w+') as output_ids_file:
+        data = input_data_file.readlines()
+        ids = input_ids_file.readlines()
+
+        if reference_ids_path is None:
+            sampled_indices = random.sample(range(len(data)), sample_size)
+        else:
+            with open(reference_ids_path) as reference_ids_file:
+                reference_ids = reference_ids_file.readlines()
+                sampled_indices = [ids.index(reference_id) for reference_id in reference_ids]
+
+        output_data_file.writelines([data[index] for index in sampled_indices])
+        output_ids_file.writelines([ids[index] for index in sampled_indices])
 
 
 def get_file_length(path):

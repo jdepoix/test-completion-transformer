@@ -63,7 +63,7 @@ class OnlyKnownIdentifiersSampler(Sampler):
                 for index, logit in enumerate(F.softmax(logits, dim=-1))
             ])
             if any(known_logits != self._filter_value):
-                logits = known_logits
+                logits = F.softmax(known_logits, dim=-1)
 
         return self._base_sampler.sample(logits)
 

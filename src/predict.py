@@ -3,8 +3,13 @@ import torch
 from sampling import NucleusSampler
 
 
+class FailedPrediction(Exception):
+    def __init__(self, raw_prediction):
+        self.raw_prediction = raw_prediction
+
+
 class ThenSectionPredictor():
-    class PredictionExceededMaxLength(Exception):
+    class PredictionExceededMaxLength(FailedPrediction):
         pass
 
     class InputSequenceExceededMaxLength(Exception):
@@ -37,7 +42,7 @@ class ThenSectionPredictor():
         prediction = [self._sos_index]
         while prediction[-1] != self._eos_index:
             if len(prediction) >= self._max_length:
-                raise ThenSectionPredictor.PredictionExceededMaxLength()
+                raise ThenSectionPredictor.PredictionExceededMaxLength(prediction[1:])
             prediction.append(
                 sampler.sample(
                     self._forward(test_declaration_tensor, prediction),
@@ -54,7 +59,10 @@ class ThenSectionPredictor():
 
 
 class PredictionPipeline():
-    class ContainsUnknownToken(Exception):
+    class ContainsUnknownToken(FailedPrediction):
+        pass
+
+    class PredictionUnparsable(FailedPrediction):
         pass
 
     def __init__(self, predictor, source_code_processor, bpe_processor, vocab):
@@ -89,8 +97,13 @@ class PredictionPipeline():
 
     def execute_on_encoded(self, encoded_sequence, sampler=None):
         prediction = self._predictor.predict(encoded_sequence, sampler_initializer=sampler)
-        decoded_prediction = self._vocab.decode(prediction)
-        if self._bpe_processor.UNKOWN_TOKEN in decoded_prediction:
-            raise PredictionPipeline.ContainsUnknownToken()
-        decoded_sequence = self._bpe_processor.decode(decoded_prediction)
-        return self._source_code_processor.decode(decoded_sequence)
+        try:
+            decoded_prediction = self._vocab.decode(prediction)
+            if self._bpe_processor.UNKOWN_TOKEN in decoded_prediction:
+                raise PredictionPipeline.ContainsUnknownToken(prediction)
+            decoded_sequence = self._bpe_processor.decode(decoded_prediction)
+            return self._source_code_processor.decode(decoded_sequence)
+        except FailedPrediction as exception:
+            raise exception
+        except Exception:
+            raise PredictionPipeline.PredictionUnparsable(prediction)

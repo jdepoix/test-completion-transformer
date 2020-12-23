@@ -32,7 +32,10 @@ class PredictionApi():
         self._predictors = {
             model_file.split('.ckpt')[0]: PredictionPipeline(
                 ThenSectionPredictor(
-                    GwtSectionPredictionTransformer.load_from_checkpoint(f'{model_dir}/{model_file}').to(device).eval(),
+                    GwtSectionPredictionTransformer.load_from_checkpoint(
+                        f'{model_dir}/{model_file}',
+                        strict=False,
+                    ).to(device).eval(),
                     vocab.get_index(vocab.SOS_TOKEN),
                     vocab.get_index(vocab.EOS_TOKEN),
                     max_prediction_length,
