@@ -42,7 +42,7 @@ class GreedySampler(Sampler):
 
 
 class OnlyKnownIdentifiersSampler(Sampler):
-    def __init__(self, vocab, input_ast_sequence, base_sampler, fallback_p=1e-3, filter_value=0.0):
+    def __init__(self, vocab, input_ast_sequence, base_sampler, fallback_p=1e-3, filter_value=-float('Inf')):
         # TODO should this consider token sequence instead of individual tokens?
         self._vocab = vocab
         self._known_identifiers = set(
@@ -63,7 +63,7 @@ class OnlyKnownIdentifiersSampler(Sampler):
                 for index, logit in enumerate(F.softmax(logits, dim=-1))
             ])
             if any(known_logits != self._filter_value):
-                logits = F.softmax(known_logits, dim=-1)
+                logits = known_logits
 
         return self._base_sampler.sample(logits)
 

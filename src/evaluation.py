@@ -187,7 +187,10 @@ class Evaluator():
                             raw_prediction = self._bpe_processor.decode(raw_prediction)
                     except Exception:
                         raw_prediction = exception.raw_prediction
-                    failed_predictions_log_file.write(f'{raw_prediction}\n')
+                    try:
+                        failed_predictions_log_file.write(f'{raw_prediction}\n')
+                    except Exception:
+                        pass
                 except Exception:
                     print(f'[{datetime.datetime.now()}] evaluation for datapoint #{index} failed:')
                     traceback.print_exc()
