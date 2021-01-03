@@ -76,6 +76,10 @@ class Type:
 
 
 class Loader():
+    class CantLoadSampler(Exception):
+        def __init__(self, sampler_type, kwargs):
+            super().__init__(f'Could not load sampler {sampler_type} with settings {kwargs}')
+
     def __init__(self, vocab):
         self._vocab = vocab
 
@@ -93,3 +97,5 @@ class Loader():
             return lambda _: NucleusSampler(**nucleus_kwargs)
         if sampler_type == Type.GREEDY:
             return lambda _: GreedySampler()
+
+        raise Loader.CantLoadSampler(sampler_type, kwargs)
