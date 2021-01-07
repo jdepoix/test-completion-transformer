@@ -84,7 +84,7 @@ class Loader():
         self._vocab = vocab
 
     def load_sampler(self, sampler_type, **kwargs):
-        nucleus_kwargs = {'p': kwargs['p']} if 'p' in kwargs else {}
+        nucleus_kwargs = {'top_p': kwargs['top_p']} if 'top_p' in kwargs else {}
         only_known_kwargs = {'fallback_p': kwargs['fallback_p']} if 'fallback_p' in kwargs else {}
 
         if sampler_type == Type.ONLY_KNOWN_IDENTIFIERS_NUCLEUS:
