@@ -374,21 +374,52 @@ def dump_jsonl(data):
 
 def get_argpaser():
     parser = ArgumentParser()
-    parser.add_argument('--bpe_vocab_size', type=int, default=16000)
-    parser.add_argument('--input_dataset_path', type=str, required=True)
-    parser.add_argument('--output_dir', type=str, required=True)
-    parser.add_argument('--data_split_dir_path', type=str, default=None)
-    parser.add_argument('--tokenize_input_dataset', type=bool, default=False)
+    parser.add_argument('--bpe_vocab_size', type=int, default=16000, help='the target size of the BPE vocabulary')
+    parser.add_argument('--input_dataset_path', type=str, required=True, help='the jsonl dataset file')
+    parser.add_argument(
+        '--output_dir',
+        type=str,
+        required=True,
+        help='the directory the preprocessed dataset is outputted to')
+    parser.add_argument(
+        '--data_split_dir_path',
+        type=str,
+        default=None,
+        help='path to a predefined datasplit if the preprocessing process should not create a new one'
+    )
+    parser.add_argument(
+        '--tokenize_input_dataset',
+        type=bool,
+        default=False,
+        help='whether the dataset should be tokenized '
+             '(this needs to be true if the dataset hasn\'t been tokenized yet!)'
+    )
     parser.add_argument(
         '--target_format',
         type=str,
         default=TargetFormat.AST,
-        choices=(TargetFormat.AST, TargetFormat.CODE,)
+        choices=(TargetFormat.AST, TargetFormat.CODE,),
+        help='the output format (AST or CODE)'
     )
     parser.add_argument('--max_source_seq_length', type=int, default=None)
     parser.add_argument('--max_target_seq_length', type=int, default=None)
-    parser.add_argument('--ast_model_path', type=str, default=None)
-    parser.add_argument('--skip_to_step', type=int, default=None)
+    parser.add_argument(
+        '--ast_model_path',
+        type=str,
+        default=None,
+        help='path to the AST BPE model (only needed when target format is CODE to evaluate max sequence length)'
+    )
+    parser.add_argument(
+        '--skip_to_step',
+        type=int,
+        default=None,
+        help='Can be used to continue preprocessing using the ID of one of the following steps: '
+             '(1) create raw vocabulary, '
+             '(2) train BPE, '
+             '(3) BPE encode dataset, '
+             '(4) create dataset vocabulary, '
+             '(5) create vocab encoded splits'
+    )
     return parser
 
 

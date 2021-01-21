@@ -254,21 +254,70 @@ class Evaluator():
 
 def get_parser():
     parser = ArgumentParser()
-    parser.add_argument('--tensorboard_log_dir', type=str, required=True)
-    parser.add_argument('--evaluation_dataset_path', type=str, required=True)
-    parser.add_argument('--evaluation_dataset_ids_path', type=str, default=None)
-    parser.add_argument('--vocab_path', type=str, required=True)
-    parser.add_argument('--bpe_model_path', type=str, required=True)
-    parser.add_argument('--num_workers', type=int, required=True)
-    parser.add_argument('--prediction_log_dir', type=str, required=True)
-    parser.add_argument('--write_results_to_tensorboard', type=bool, default=False)
+    parser.add_argument(
+        '--tensorboard_log_dir',
+        type=str,
+        required=True,
+        help='The tensorboard dir resulting from training the model. '
+             'The best performing models in the checkpoint subdir are selected for evaluation'
+    )
+    parser.add_argument(
+        '--evaluation_dataset_path',
+        type=str,
+        required=True,
+        help='The dataset to evaluate the model on.'
+    )
+    parser.add_argument(
+        '--evaluation_dataset_ids_path',
+        type=str,
+        default=None,
+        help='The file containing the IDs of the evaluateion dataset. '
+             'If this is not provided the datapoints will be enumerated.'
+    )
+    parser.add_argument('--vocab_path', type=str, required=True, help='Path to the vocabulary.')
+    parser.add_argument('--bpe_model_path', type=str, required=True, help='Path to the BPE model')
+    parser.add_argument(
+        '--num_workers',
+        type=int,
+        required=True,
+        help='The number of processes to run the evaluation with'
+    )
+    parser.add_argument(
+        '--prediction_log_dir',
+        type=str,
+        required=True,
+        help='The path to log the prediction results to'
+    )
+    parser.add_argument(
+        '--write_results_to_tensorboard',
+        type=bool,
+        default=False,
+        help='whether results should be logged to tensorboard'
+    )
     parser.add_argument('--sequentialization_api_port', type=int, default=5555)
     parser.add_argument('--sequentialization_api_host', type=str, default='localhost')
     parser.add_argument('--max_prediction_length', type=int, default=512)
-    parser.add_argument('--max_number_of_checkpoints', type=int, default=5)
-    parser.add_argument('--sampler_settings', nargs='+', type=str, default=[sampling.Type.GREEDY])
+    parser.add_argument(
+        '--max_number_of_checkpoints',
+        type=int,
+        default=5,
+        help='The number of best performing checkpoints in the tensorboard dir that should be evaluated.'
+    )
+    parser.add_argument(
+        '--sampler_settings',
+        nargs='+',
+        type=str,
+        default=[sampling.Type.GREEDY],
+        help='Specify the sampler to use.'
+    )
     parser.add_argument('--device', type=str, default='cuda', choices=('cpu', 'cuda',))
-    parser.add_argument('--format', type=str, default='AST', choices=('AST', 'CODE',))
+    parser.add_argument(
+        '--format',
+        type=str,
+        default='AST',
+        choices=('AST', 'CODE',),
+        help='Specify whether the prediction pipeline should use AST or CODE encoding.'
+    )
     parser.add_argument('--log_interval', type=int, default=1000)
     return parser
 

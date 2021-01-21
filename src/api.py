@@ -23,9 +23,9 @@ class PredictionApi():
         SUCCESS = 'SUCCESS'
         ERROR = 'ERROR'
 
-    def __init__(self, data_dir, model_dir, max_prediction_length):
-        bpe_processor = BpeProcessor(f'{data_dir}/model/ast_values.model')
-        vocab = Vocab(f'{data_dir}/data/bpe_ast_vocab.txt')
+    def __init__(self, vocab_path, bpe_model_path, model_dir, max_prediction_length):
+        bpe_processor = BpeProcessor(bpe_model_path)
+        vocab = Vocab(vocab_path)
         sequentialization_client = AstSequentializationApiClient('localhost', 5555)
         device = 'cuda' if torch.cuda.is_available() else 'cpu'
 
@@ -82,7 +82,7 @@ class PredictionApi():
             }
 
 
-api = PredictionApi(os.environ['DATA_DIR'], os.environ['MODEL_DIR'], 512)
+api = PredictionApi(os.environ['VOCAB_PATH'], os.environ['BPE_PATH'], os.environ['MODEL_DIR'], 512)
 
 
 @app.route('/api/predictions/<model_name>', methods=('POST',))

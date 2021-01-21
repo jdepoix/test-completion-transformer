@@ -30,6 +30,7 @@ def objective(trial):
     args = get_parser().parse_args()
     args.experiment_name = trial.study.study_name
 
+    # hyperparameter can be modified here!
     args.learning_rate = trial.suggest_categorical('learning_rate', [1e-2, 5e-3, 1e-3])
     args.lr_warmup_steps = trial.suggest_categorical('lr_warmup_steps', [1000, 2000, 4000])
     args.accumulate_grad_batches = trial.suggest_categorical('accumulate_grad_batches', [32, 64, 128])
