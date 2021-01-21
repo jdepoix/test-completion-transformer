@@ -9,6 +9,9 @@ def tokenize(code):
 
 
 class SourceCodeProcessor(ABC):
+    """
+    Base class for different SourceCodeProcessors which handle how source code is encoded and decoded
+    """
     def __init__(self, sequentialization_client):
         self._sequentialization_client = sequentialization_client
 
@@ -31,6 +34,9 @@ class SourceCodeProcessor(ABC):
 
 
 class AstSequenceProcessor(SourceCodeProcessor):
+    """
+    Encodes source code using the sequentialized Test Declaration AST
+    """
     def encode(
         self,
         test_file_content,
@@ -56,6 +62,9 @@ class AstSequenceProcessor(SourceCodeProcessor):
 
 
 class TokenizedCodeProcessor(SourceCodeProcessor):
+    """
+    Encodes source code using code tokenization with javalang.
+    """
     def encode(
         self,
         test_file_content,

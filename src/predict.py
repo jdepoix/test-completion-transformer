@@ -9,6 +9,11 @@ class FailedPrediction(Exception):
 
 
 class ThenSectionPredictor():
+    """
+    Handles creating a prediction on unlabeled data, using the given model.
+    The the first token is predicted with only a SOS token in the decoders input and the sampled output it fed back
+    into the decoder until a EOS token is sampled, the max length is exceeded, or a unknown token is sampled.
+    """
     class PredictionExceededMaxLength(FailedPrediction):
         pass
 
@@ -59,6 +64,10 @@ class ThenSectionPredictor():
 
 
 class PredictionPipeline():
+    """
+    Implements the prediction pipeline unsing the given ThenSectionPredictor, BpeProcessor, Vocab and
+    SourceCodeProcessor
+    """
     class ContainsUnknownToken(FailedPrediction):
         pass
 

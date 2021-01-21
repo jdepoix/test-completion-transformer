@@ -9,6 +9,9 @@ from torch.utils.data import Dataset, DataLoader
 
 
 class Vocab():
+    """
+    Represents a vocabulary object and provides functionality to encode/decode sequences by their vocabulary IDs.
+    """
     PAD_TOKEN = '<[PAD]>'
     SOS_TOKEN = '<[THEN]>'
     EOS_TOKEN = '<[/THEN]>'

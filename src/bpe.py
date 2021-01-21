@@ -6,6 +6,10 @@ import ast_sequence
 
 
 class BpeProcessor():
+    """
+    Handles the BPE encoding/decoding of AST sequences.
+    """
+
     NEW_LINE_TOKEN = '<_N_>'
     UNKOWN_TOKEN = '<_UNK_>'
 

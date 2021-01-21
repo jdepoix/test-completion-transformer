@@ -43,7 +43,6 @@ class GreedySampler(Sampler):
 
 class OnlyKnownIdentifiersSampler(Sampler):
     def __init__(self, vocab, input_ast_sequence, base_sampler, fallback_p=1e-3, filter_value=-float('Inf')):
-        # TODO should this consider token sequence instead of individual tokens?
         self._vocab = vocab
         self._known_identifiers = set(
             vocab.encode(AstSequence.get_identifier_tokens(vocab.decode(input_ast_sequence)))
@@ -76,6 +75,9 @@ class Type:
 
 
 class Loader():
+    """
+    Factory for different samplers given the type of the sampler as a string.
+    """
     class CantLoadSampler(Exception):
         def __init__(self, sampler_type, kwargs):
             super().__init__(f'Could not load sampler {sampler_type} with settings {kwargs}')

@@ -27,6 +27,9 @@ from source_code import AstSequenceProcessor, TokenizedCodeProcessor
 
 
 class Evaluator():
+    """
+    Handles the evaluation process using multiple processes for checkpoints it finds in the given tensorboard log dir.
+    """
     def __init__(
         self,
         model_class,
@@ -271,7 +274,7 @@ def get_parser():
         '--evaluation_dataset_ids_path',
         type=str,
         default=None,
-        help='The file containing the IDs of the evaluateion dataset. '
+        help='The file containing the IDs of the evaluation dataset. '
              'If this is not provided the datapoints will be enumerated.'
     )
     parser.add_argument('--vocab_path', type=str, required=True, help='Path to the vocabulary.')

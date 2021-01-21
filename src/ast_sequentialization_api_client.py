@@ -3,6 +3,11 @@ import json
 
 
 class AstSequentializationApiClient():
+    """
+    Client for the Java Sequentialization API used to create the Test Declaration AST and generate source code for
+    AST sequences.
+    """
+
     class ApiError(Exception):
         pass
 
