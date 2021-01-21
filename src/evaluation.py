@@ -2,8 +2,7 @@ import os
 import json
 import traceback
 import datetime
-from collections import defaultdict
-from concurrent.futures.process import ProcessPoolExecutor
+from multiprocessing.pool import Pool
 import multiprocessing
 from argparse import ArgumentParser
 
@@ -107,48 +106,54 @@ class Evaluator():
             self._vocab,
         )
 
-    def _permute_dataset_with_samplers(self):
+    def _load_dataset(self):
         with open(self._dataset_path) as dataset_file:
-            index = 0
-            for datapoint_index, line in enumerate(dataset_file):
-                for sampler in self._sampler_settings:
-                    yield index, datapoint_index, line, sampler
-                    index += 1
+            return list(enumerate(dataset_file))
 
     def _evaluate_checkpoint(self, checkpoint_path):
-        with ProcessPoolExecutor(
+        with Pool(
             self._num_worker,
             initializer=self._init_prediction_pipeline,
             initargs=(checkpoint_path,)
-        ) as executor:
-            futures_per_sampler = defaultdict(list)
-            for index, datapoint_index, json_line, sampler in self._permute_dataset_with_samplers():
-                futures_per_sampler[sampler].append(
-                    executor.submit(self._evaluate_datapoint, json_line, sampler, index, datapoint_index)
-                )
+        ) as pool:
+            results_per_sampler = {}
+            dataset = self._load_dataset()
+            index = 0
+            for sampler in self._sampler_settings:
+                arg_list = []
+                for datapoint_index, json_line in dataset:
+                    arg_list.append((json_line, sampler, index, datapoint_index))
+                    index += 1
+                results_per_sampler[sampler] = pool.map(self._evaluate_datapoint, arg_list)
 
             return {
-                sampler: self._process_futures(futures, sampler)
-                for sampler, futures in futures_per_sampler.items()
+                sampler: self._process_results(results, sampler)
+                for sampler, results in results_per_sampler.items()
             }
 
-    def _evaluate_datapoint(self, json_line, sampler, index, datapoint_index):
-        source, target = json.loads(json_line)
-        sampler_setting = self._sampler_settings[sampler]
-        prediction = Evaluator.prediction_pipeline.execute_on_encoded(
-            source,
-            sampler=sampling.Loader(self._vocab).load_sampler(sampler_setting['type'], **sampler_setting['kwargs'])
-        )
-        tokenized_prediction = [token.value for token in javalang.tokenizer.tokenize(prediction)]
-        if index % self._log_interval == 0:
-            print(f'[{datetime.datetime.now()}] FINISHED evaluating {index}')
-        return {
-            'prediction': tokenized_prediction,
-            'target': target,
-            'datapoint_index': datapoint_index,
-        }
+    def _evaluate_datapoint(self, args):
+        try:
+            json_line, sampler, index, datapoint_index = args
+            source, target = json.loads(json_line)
+            sampler_setting = self._sampler_settings[sampler]
+            prediction = Evaluator.prediction_pipeline.execute_on_encoded(
+                source,
+                sampler=sampling.Loader(self._vocab).load_sampler(sampler_setting['type'], **sampler_setting['kwargs'])
+            )
+            tokenized_prediction = [token.value for token in javalang.tokenizer.tokenize(prediction)]
+            if index % self._log_interval == 0:
+                print(f'[{datetime.datetime.now()}] FINISHED evaluating {index}')
+            return {
+                'prediction': tokenized_prediction,
+                'target': target,
+                'datapoint_index': datapoint_index,
+            }
+        except Exception as exception:
+            return {
+                'exception': exception,
+            }
 
-    def _process_futures(self, futures, sampler):
+    def _process_results(self, results, sampler):
         total_count = 0
         max_length_exceeded_count = 0
         contains_unknown_token_count = 0
@@ -164,9 +169,11 @@ class Evaluator():
                     f'{self._prediction_log_dir}/{sampler}_predictions_FAILED.log', 'w+'
                 ) as failed_predictions_log_file, \
                 open(f'{self._prediction_log_dir}/{sampler}_targets.log', 'w+') as targets_log_file:
-            for index, future in enumerate(futures):
+            for index, result in enumerate(results):
                 try:
-                    result = future.result()
+                    if 'exception' in result:
+                        raise result['exception']
+
                     predictions.append(result['prediction'])
                     targets.append([result['target']])
                     datapoint_id = result['datapoint_index'] \
