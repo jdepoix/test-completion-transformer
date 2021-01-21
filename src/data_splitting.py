@@ -1,6 +1,6 @@
 import os
-import sys
 import sqlite3
+from argparse import ArgumentParser
 
 
 def retrieve_repo_test_counts(database_path, when_location):
@@ -66,12 +66,27 @@ def save_splits(output_dir, id_splits):
         file.write('\n'.join(id_splits[2]))
 
 
+def get_parser():
+    parser = ArgumentParser()
+    parser.add_argument('--database_path', type=str, required=True, help='path to the raw dataset directory')
+    parser.add_argument(
+        '--output_dir',
+        type=str,
+        required=True,
+        help='path to where the project-based data splits will be save'
+    )
+    parser.add_argument(
+        '--when_location',
+        type=str,
+        required=True,
+        help='only include datapoints in the split with the given location of the When call'
+    )
+    return parser
+
+
 if __name__ == '__main__':
-    database_path = sys.argv[1]
-    output_dir = sys.argv[2]
-    when_location = sys.argv[3]
+    args = get_parser().parse_args()
+    if not os.path.exists(args.output_dir):
+        os.makedirs(args.output_dir)
 
-    if not os.path.exists(output_dir):
-        os.makedirs(output_dir)
-
-    create_data_split(database_path, output_dir, when_location, (.8, .1, .1))
+    create_data_split(args.database_path, args.output_dir, args.when_location, (.8, .1, .1))
