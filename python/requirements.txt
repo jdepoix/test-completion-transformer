@@ -1,0 +1,11 @@
+torch
+pytorch-lightning
+tensorboard
+optuna
+sentencepiece
+flask
+flask-cors
+javalang
+nltk
+rouge-metric
+pandas
