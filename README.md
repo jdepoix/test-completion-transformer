@@ -14,10 +14,9 @@ You can find the code for following tasks in this repository with explanations o
 * [Running the Data Explorer](#Running-the-Data-Explorer)
 
 I recommend reading the thesis first ([which can also be found in this repository](thesis.pdf)) to get a better understanding of these tasks.
-As some of them heavily rely on [JavaParser](https://github.com/javaparser/javaparser) features, the codebase is split into a [Python repository](python) and [Java repository](java).
+As some of them heavily rely on [JavaParser](https://github.com/javaparser/javaparser) features, the codebase is split into a [Python directory](python) and [Java directory](java).
 The following section will explain how to make them work together for the described tasks.
-Also, there are two separate repositories for the Data Explorer [frontend](data_explorer/frontend) and [backend](data_explorer/backend).
-All of these repositories are git submodules of this main repository.
+Also, there are two separate directories for the Data Explorer [frontend](data_explorer/frontend) and [backend](data_explorer/backend).
 The raw dataset, trained model and datasplits used in this thesis [are uploaded here](https://hbx.fhhrz.net/public?folderID=MktmYVpGUll1TlNYUGNCM1lvYVhj).
 
 ### Setup
@@ -90,7 +89,7 @@ However, the dataset created from this has been [uploaded here](https://hbx.fhhr
 
 Once GitHub repositories containing JUnit tests have been downloaded, they can be used to create a dataset which maps tests to the methods they are testing.
 Also, the test methods are labeled with information about their Given/When/Then sections.
-As this process relies on AST analysis with JavaParser, it is implemented in the [Java repository](java).
+As this process relies on AST analysis with JavaParser, it is implemented in the [Java codebase](java).
 Since this is a computationally expensive process it is parallelized.
 Unfortunately JavaParser leaks memory while doing so, therefore, a small Python script is used (without any dependencies) to parallelize the process in multiple JVMs, thereby preventing memory leaks.
 
