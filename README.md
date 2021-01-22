@@ -1,7 +1,7 @@
 # A syntax-aware Transformer Model for Test Completion
 
-This repositiory contains the source code created for my Master Thesis "A syntax-aware Transformer Model for Test Completion", which proposes a Transformer based model predicting assertions for a given unit test.
-You can find the code for following tasks in this repository with explanations on how to use them.
+This repository contains the source code created for my Master Thesis "A syntax-aware Transformer Model for Test Completion", which proposes a Transformer based model, predicting assertions for a given unit test.
+You can find the code for the following tasks in this repository with explanations on how to use them:
 
 * [Scraping data from GitHub to create a dataset from](#scraping-data-from-github-to-create-a-dataset-from)
 * [Creating a test completion dataset from the scraped GitHub data](#Creating-a-test-completion-dataset-from-the-scraped-GitHub-data)
@@ -15,7 +15,7 @@ You can find the code for following tasks in this repository with explanations o
 
 I recommend reading the thesis first ([which can also be found in this repository](thesis.pdf)) to get a better understanding of these tasks.
 As some of them heavily rely on [JavaParser](https://github.com/javaparser/javaparser) features, the codebase is split into a [Python directory](python) and [Java directory](java).
-The following section will explain how to make them work together for the described tasks.
+The following sections will explain how to make them work together for the described tasks.
 Also, there are two separate directories for the Data Explorer [frontend](data_explorer/frontend) and [backend](data_explorer/backend).
 The raw dataset, trained model and datasplits used in this thesis [are uploaded here](https://hbx.fhhrz.net/public?folderID=MktmYVpGUll1TlNYUGNCM1lvYVhj).
 
@@ -24,7 +24,7 @@ The raw dataset, trained model and datasplits used in this thesis [are uploaded 
 You should install the required dependencies first before continuing with the steps explained in the following sections.
 For the Java codebase this is only needed if you wish to modify the code, as the [jars have been uploaded here](https://hbx.fhhrz.net/public?folderID=MktmYVpGUll1TlNYUGNCM1lvYVhj).
 
-#### Python Repository
+#### Python
 
 Create a virtualenv and install the requirements specified in `python/requirements.txt`:
 ```shell
@@ -33,7 +33,7 @@ python3 -m venv venv
 venv/bin/pip install -r requirements.txt 
 ```
 
-#### Java Repository
+#### Java
 
 Download the [jars which have been uploaded here](https://hbx.fhhrz.net/public?folderID=MktmYVpGUll1TlNYUGNCM1lvYVhj).
 The following instructions will assume that you put them into `java/jars`.
@@ -253,6 +253,8 @@ You can get the extensive list of the parameters and how to use them by executin
 ```shell
 venv/bin/pytohn src/evaluation.py --help
 ```
+
+The evaluation results will be printed to stdout and all predictions generated during the prediction process are logged to the path specified using the `prediction_log_dir` parameter.
 
 ## Running the Data Explorer
 
